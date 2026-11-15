@@ -12,8 +12,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 html2canvas 供高品質 DOM 截圖與 Canvas 錄製輔助 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 引入 PDF.js 供 PDF 簡報高畫質無邊框渲染 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- 引入 JSZip 供 PPTX 檔案結構解析與媒體提取 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -108,28 +115,28 @@
         <div class="flex items-center space-x-2 sm:space-x-3">
             <!-- 截圖與錄影控制組 -->
             <div class="flex items-center bg-slate-950 p-1 border border-slate-800 space-x-1">
-                <button id="screenshotBtn" onclick="captureScreenWall()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅擷取模擬器畫面並自動下載 PNG">
+                <button id="screenshotBtn" onclick="captureScreenWall()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="擷取模擬器畫面並自動下載 PNG&#10;快捷鍵：Alt + S (或 F8)">
                     <i class="fa-solid fa-camera"></i> <span>截圖下載</span>
                 </button>
-                <button id="recordBtn" onclick="toggleRecording()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅錄製模擬器畫面(含網頁聲音)並自動下載影片">
+                <button id="recordBtn" onclick="toggleRecording()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="開始 / 停止錄製模擬器畫面&#10;快捷鍵：Alt + R (或 F9)">
                     <i id="recordBtnIcon" class="fa-solid fa-video"></i> <span id="recordBtnText">開始錄影</span>
                 </button>
-                <button id="micToggleBtn" onclick="toggleMicOption()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs sm:text-sm font-medium flex items-center gap-1 transition border border-slate-700" title="切換錄影時是否同步錄製麥克風旁白">
+                <button id="micToggleBtn" onclick="toggleMicOption()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs sm:text-sm font-medium flex items-center gap-1 transition border border-slate-700" title="切換錄影時是否同步錄製麥克風旁白&#10;快捷鍵：Alt + M">
                     <i id="micToggleIcon" class="fa-solid fa-microphone-slash"></i>
                     <span id="micToggleText" class="hidden xl:inline text-xs">麥克風: 關</span>
                 </button>
             </div>
 
-            <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm flex items-center gap-2 transition" title="切換左側設定面板顯示狀態">
+            <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm flex items-center gap-2 transition" title="切換左側設定面板顯示狀態&#10;快捷鍵：Alt + B">
                 <i id="toggleSidebarIcon" class="fa-solid fa-bars-staggered text-blue-400"></i>
                 <span id="toggleSidebarText" class="hidden md:inline">收合左側面板</span>
             </button>
             <button id="loadDemoBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="載入範例儀表板程式碼">
                 <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden lg:inline">載入智慧城市範例</span>
             </button>
-            <label for="fileUpload" class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20">
-                <i class="fa-solid fa-folder-open"></i> <span class="hidden sm:inline">匯入 HTML 檔</span>
-                <input id="fileUpload" type="file" accept=".html,.htm" class="hidden">
+            <label for="fileUpload" class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20" title="支援匯入 .html, .pdf, .pptx, .png, .jpg, .mp4">
+                <i class="fa-solid fa-folder-open"></i> <span class="hidden sm:inline">匯入檔案 (HTML / PDF / PPT)</span>
+                <input id="fileUpload" type="file" accept=".html,.htm,.pdf,.pptx,.ppt,.png,.jpg,.jpeg,.webp,.svg,.mp4,.webm" class="hidden">
             </label>
         </div>
     </header>
@@ -155,7 +162,7 @@
                     <i class="fa-solid fa-expand text-blue-400"></i> 尺寸與電視牆設定
                 </button>
                 <button id="tabBtnCode" onclick="switchTab('code')" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-code text-emerald-400"></i> 網址 / HTML 原始碼
+                    <i class="fa-solid fa-layer-group text-emerald-400"></i> 內容來源 (檔案/網址/HTML)
                 </button>
             </div>
 
@@ -245,7 +252,7 @@
                                 <input type="number" id="ratioH" value="9" min="1" step="0.1" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg px-3 py-2 text-sm font-mono text-center text-white focus:outline-none">
                                 <span class="absolute right-2.5 top-2.5 text-[10px] text-slate-500">高</span>
                             </div>
-                            <button onclick="swapOrientation()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition" title="直橫向翻轉">
+                            <button onclick="swapOrientation()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition" title="直橫向翻轉&#10;快捷鍵：Alt + O">
                                 <i class="fa-solid fa-rotate"></i> 翻轉
                             </button>
                         </div>
@@ -291,56 +298,100 @@
                     <div class="grid grid-cols-3 gap-2 pt-1">
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">水平螢幕數 (欄)</label>
-                            <input type="number" id="gridCols" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                            <input type="number" id="gridCols" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-sm font-mono text-center text-white focus:outline-none focus:border-indigo-500">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">垂直螢幕數 (列)</label>
-                            <input type="number" id="gridRows" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                            <input type="number" id="gridRows" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-sm font-mono text-center text-white focus:outline-none focus:border-indigo-500">
                         </div>
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">拼縫粗細 (px)</label>
-                            <input type="number" id="bezelWidth" value="3" min="0" max="20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                            <label class="block text-[11px] text-slate-400 mb-1">拼縫黑邊粗細</label>
+                            <input type="number" id="bezelWidth" value="3" min="0" max="20" class="w-full bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-sm font-mono text-center text-white focus:outline-none focus:border-indigo-500">
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. 畫面填充與外框檢視選項 -->
-                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-3">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center">
-                        <i class="fa-solid fa-eye w-4 text-center mr-1.5"></i>外框與顯示輔助
+                <!-- 4. 輔助檢視與擷取設定 -->
+                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-2.5">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
+                        <i class="fa-solid fa-sliders w-4 text-center text-emerald-400 mr-1.5"></i>輔助檢視與擷取設定
                     </span>
-                    <div class="flex items-center justify-between text-xs text-slate-300">
-                        <span>顯示擬真電視外框與環境光</span>
-                        <input type="checkbox" id="showFrameToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-slate-300">
-                        <span>顯示中心十字對齊輔助線</span>
-                        <input type="checkbox" id="showCenterGuides" class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-slate-300 pt-1 border-t border-slate-800/80">
-                        <span>截圖/錄影時包含電視牆拼縫黑線</span>
-                        <input type="checkbox" id="captureIncludeBezel" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-slate-300">
-                        <span>錄影時收錄網頁內部聲音 (需勾選共用分頁音訊)</span>
-                        <input type="checkbox" id="recordSystemAudioToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-slate-300">
-                        <span>截圖/錄影時隱藏滑鼠游標 (避免錄進鼠標)</span>
-                        <input type="checkbox" id="hideCursorOnCaptureToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
-                    </div>
+                    <label class="flex items-center justify-between cursor-pointer py-1">
+                        <span class="text-xs text-slate-300">顯示電視實體外框與指示燈</span>
+                        <input type="checkbox" id="showFrameToggle" checked class="bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer py-1">
+                        <span class="text-xs text-slate-300">顯示畫面中心十字對齊輔助線</span>
+                        <input type="checkbox" id="showCenterGuides" class="bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer py-1 border-t border-slate-800/80 pt-2">
+                        <span class="text-xs text-slate-300">錄影時收錄網頁內部系統音效</span>
+                        <input type="checkbox" id="recordSystemAudioToggle" checked class="bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer py-1">
+                        <span class="text-xs text-slate-300">截圖/錄影時隱藏滑鼠游標</span>
+                        <input type="checkbox" id="hideCursorOnCaptureToggle" checked class="bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
+                    </label>
                 </div>
 
             </div>
 
-            <!-- Tab 2: 網址 (URL) 與 HTML 原始碼輸入面板 (預設隱藏) -->
-            <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-hidden select-text space-y-3">
+            <!-- Tab 2: 網址 (URL)、簡報檔案與 HTML 原始碼輸入面板 (預設隱藏) -->
+            <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-y-auto select-text space-y-3">
                 
-                <!-- 方式 A：輸入外部網址或本地伺服器 URL -->
+                <!-- 方式 1：上傳 PDF / PPTX 簡報或圖片影片 -->
+                <div class="bg-slate-950/80 p-3.5 border border-slate-800 shrink-0 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-powerpoint"></i> 方式 1：上傳 PDF / PPTX 簡報或媒體檔
+                        </span>
+                        <label for="fileUpload" class="cursor-pointer px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-upload"></i> 選擇檔案
+                        </label>
+                    </div>
+
+                    <!-- 簡報與媒體專用控制面板 (載入 PDF/PPTX/圖片時顯示或隨時可調) -->
+                    <div class="bg-slate-900/90 p-2.5 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">簡報畫面縮放適應模式：</span>
+                            <span id="slideFileName" class="font-mono text-[11px] text-amber-300 truncate max-w-[160px]">尚未載入簡報檔</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button id="fitBtnContain" onclick="setSlideFitMode('contain')" class="py-1.5 px-2 bg-blue-600 text-white text-[11px] font-medium border border-blue-400 transition" title="維持簡報原始比例，不足處留黑邊">
+                                完整顯示 (留黑邊)
+                            </button>
+                            <button id="fitBtnFill" onclick="setSlideFitMode('fill')" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium border border-slate-700 transition" title="強制將簡報拉伸填滿整個電視牆比例">
+                                拉伸滿版 (符合牆面)
+                            </button>
+                            <button id="fitBtnCover" onclick="setSlideFitMode('cover')" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium border border-slate-700 transition" title="等比例放大填滿電視牆，超出部分自動裁切">
+                                裁切填滿 (無黑邊)
+                            </button>
+                        </div>
+
+                        <!-- 投影片翻頁控制列 -->
+                        <div id="slideNavControls" class="hidden pt-2 border-t border-slate-800 flex items-center justify-between">
+                            <button onclick="changeSlidePage(-1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 transition flex items-center gap-1" title="快捷鍵：左方向鍵 (←)">
+                                <i class="fa-solid fa-chevron-left"></i> 上一頁
+                            </button>
+                            <div class="text-xs font-mono text-slate-200">
+                                第 <span id="currentSlideNum" class="text-amber-400 font-bold">1</span> / <span id="totalSlideNum">1</span> 頁
+                            </div>
+                            <button onclick="changeSlidePage(1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 transition flex items-center gap-1" title="快捷鍵：右方向鍵 (→)">
+                                下一頁 <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i>支援直接載入 <code class="text-slate-300">.pdf</code>、<code class="text-slate-300">.pptx</code> 與圖片/影片。若 PPT 含有特殊字型或複雜動畫排版，建議先在 PowerPoint 另存為 <b>PDF</b> 後匯入，可獲得 100% 像素級精準還原！
+                    </p>
+                </div>
+
+                <!-- 方式 2：輸入外部網址或本地伺服器 URL -->
                 <div class="bg-slate-950/80 p-3.5 border border-slate-800 shrink-0 space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold text-sky-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-globe"></i> 方式 1：輸入網頁網址 (URL) 預覽
+                            <i class="fa-solid fa-globe"></i> 方式 2：輸入網頁網址 (URL) 預覽
                         </span>
                         <span id="sourceModeBadge" class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             目前來源：HTML 原始碼
@@ -361,16 +412,13 @@
                             <button onclick="quickLoadUrl('https://example.com')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Example.com</button>
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-500 leading-relaxed">
-                        <i class="fa-solid fa-circle-exclamation text-amber-400/80 mr-1"></i>若部分網站（如 Google、YouTube）設定了防嵌入保護 (<code class="text-slate-400">X-Frame-Options</code>)，瀏覽器會拒絕在框內顯示，建議測試您自行架設的網站或貼上 HTML 原始碼。
-                    </p>
                 </div>
 
-                <!-- 方式 B：直接貼入 HTML 原始碼 -->
-                <div class="flex-1 flex flex-col min-h-0 bg-slate-950/40 p-3.5 border border-slate-800">
+                <!-- 方式 3：直接貼入 HTML 原始碼 -->
+                <div class="flex-1 flex flex-col min-h-[220px] bg-slate-950/40 p-3.5 border border-slate-800">
                     <div class="flex items-center justify-between mb-2 shrink-0">
                         <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-code"></i> 方式 2：貼上 HTML / CSS / JS 原始碼
+                            <i class="fa-solid fa-file-code"></i> 方式 3：貼上 HTML / CSS / JS 原始碼
                         </span>
                         <div class="flex items-center gap-2">
                             <button onclick="clearCode()" class="text-xs text-slate-400 hover:text-rose-400 px-2 py-1 bg-slate-800 transition">
@@ -396,7 +444,7 @@
             </div>
 
             <!-- 側邊欄右緣快速收合/展開耳朵按鈕 -->
-            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center z-30 transition shadow-md" title="收合/展開左側視窗">
+            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center z-30 transition shadow-md" title="收合/展開左側視窗 (快捷鍵：Alt + B)">
                 <i id="edgeCollapseIcon" class="fa-solid fa-chevron-left text-xs"></i>
             </button>
 
@@ -424,7 +472,7 @@
 
                 <!-- 畫面縮放控制 -->
                 <div class="flex items-center gap-2 shrink-0">
-                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium transition">
+                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium transition" title="自動適應視窗大小&#10;快捷鍵：Alt + F">
                         自動適應視窗
                     </button>
                     <div class="flex items-center bg-slate-800 px-2 py-1 border border-slate-700 gap-2">
@@ -452,6 +500,23 @@
                         
                         <!-- 實際渲染使用者 HTML 的 Iframe -->
                         <iframe id="previewIframe" title="Screen Wall Preview" class="w-full h-full border-0 block bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+
+                        <!-- PDF / PPTX / 圖片 / 影片 專屬全螢幕渲染層 (預設隱藏，載入檔案時啟用) -->
+                        <div id="mediaPresentationLayer" class="hidden absolute inset-0 bg-black flex items-center justify-center overflow-hidden z-[5]">
+                            <!-- PDF 與圖片渲染 Canvas / Image -->
+                            <canvas id="pdfRenderCanvas" class="hidden"></canvas>
+                            <img id="imageRenderEl" class="hidden" alt="Slide Preview" />
+                            <video id="videoRenderEl" class="hidden" controls autoplay loop></video>
+                            <!-- PPTX 原生解析結構化投影片容器 -->
+                            <div id="pptxRenderContainer" class="hidden w-full h-full relative overflow-hidden flex flex-col justify-center items-center"></div>
+
+                            <!-- 模擬器內部懸浮翻頁控制列 (滑鼠移入底部時浮現，截圖時自動隱藏) -->
+                            <div id="floatingSlideHud" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-700 px-4 py-2 flex items-center gap-4 text-white z-30 opacity-0 hover:opacity-100 transition-opacity duration-200">
+                                <button onclick="changeSlidePage(-1)" class="px-2 py-1 hover:bg-slate-800 text-sm"><i class="fa-solid fa-backward-step"></i> 上一頁</button>
+                                <span id="hudSlidePageText" class="font-mono text-sm text-amber-400 font-bold">1 / 1</span>
+                                <button onclick="changeSlidePage(1)" class="px-2 py-1 hover:bg-slate-800 text-sm">下一頁 <i class="fa-solid fa-forward-step"></i></button>
+                            </div>
+                        </div>
 
                         <!-- 電視牆拼接網格遮罩層 (模擬多螢幕拼接黑邊) -->
                         <div id="bezelOverlay" class="pointer-events-none absolute inset-0 z-10"></div>
@@ -663,7 +728,14 @@
             manualScale: 0.5,
             showFrame: true,
             showCenterGuides: false,
-            sidebarCollapsed: false
+            sidebarCollapsed: false,
+            // 簡報與媒體檢視狀態
+            activeMediaType: 'none', // 'none' | 'pdf' | 'pptx' | 'image' | 'video'
+            slideFitMode: 'contain', // 'contain' | 'fill' | 'cover'
+            currentSlide: 1,
+            totalSlides: 1,
+            pdfDoc: null,
+            pptxSlides: []
         };
 
         // DOM 元素參照
@@ -677,86 +749,47 @@
         const bezelWidthInput = document.getElementById('bezelWidth');
         const htmlCodeInput = document.getElementById('htmlCodeInput');
         const previewIframe = document.getElementById('previewIframe');
-        const stageContainer = document.getElementById('stageContainer');
         const tvOuterWrapper = document.getElementById('tvOuterWrapper');
         const iframeScaleBox = document.getElementById('iframeScaleBox');
+        const stageContainer = document.getElementById('stageContainer');
         const bezelOverlay = document.getElementById('bezelOverlay');
         const centerGuidesOverlay = document.getElementById('centerGuidesOverlay');
         const manualScaleSlider = document.getElementById('manualScaleSlider');
-        const fitScreenBtn = document.getElementById('fitScreenBtn');
 
-        // 切換左側分頁 (設定 vs 程式碼)
+        // 切換左側設定與原始碼分頁
         function switchTab(tab) {
             const panelConfig = document.getElementById('panelConfig');
             const panelCode = document.getElementById('panelCode');
-            const btnConfig = document.getElementById('tabBtnConfig');
-            const btnCode = document.getElementById('tabBtnCode');
+            const tabBtnConfig = document.getElementById('tabBtnConfig');
+            const tabBtnCode = document.getElementById('tabBtnCode');
 
             if (tab === 'config') {
                 panelConfig.classList.remove('hidden');
                 panelCode.classList.add('hidden');
-                btnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
-                btnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
+                tabBtnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
+                tabBtnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
             } else {
                 panelConfig.classList.add('hidden');
                 panelCode.classList.remove('hidden');
-                btnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
-                btnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
+                tabBtnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
+                tabBtnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
             }
-        }
-
-        // 根據比例與寬度重新計算高度
-        function recalculateResolutionFromRatio() {
-            state.ratioW = Math.max(0.1, parseFloat(ratioWInput.value) || 16);
-            state.ratioH = Math.max(0.1, parseFloat(ratioHInput.value) || 9);
-            state.resW = Math.max(100, parseInt(resWInput.value) || 1920);
-
-            if (state.lockRatio) {
-                state.resH = Math.round(state.resW * (state.ratioH / state.ratioW));
-                resHInput.value = state.resH;
-            } else {
-                state.resH = Math.max(100, parseInt(resHInput.value) || 1080);
-            }
-            updateSimulatorLayout();
-        }
-
-        // 當使用者直接修改解析度高度時，若未鎖定比例則反向更新比例顯示
-        function onResHeightChange() {
-            state.resW = Math.max(100, parseInt(resWInput.value) || 1920);
-            state.resH = Math.max(100, parseInt(resHInput.value) || 1080);
-
-            if (state.lockRatio) {
-                // 若鎖定比例但手改高度，則依高度反推寬度
-                state.resW = Math.round(state.resH * (state.ratioW / state.ratioH));
-                resWInput.value = state.resW;
-            } else {
-                // 約分計算出新的長寬比
-                const gcd = (a, b) => b ? gcd(b, a % b) : a;
-                const divisor = gcd(state.resW, state.resH);
-                state.ratioW = Math.round((state.resW / divisor) * 10) / 10;
-                state.ratioH = Math.round((state.resH / divisor) * 10) / 10;
-                ratioWInput.value = state.ratioW;
-                ratioHInput.value = state.ratioH;
-            }
-            updateSimulatorLayout();
         }
 
         // 套用預設情境
-        function applyPreset(rW, rH, targetWidth, cols, rows) {
+        function applyPreset(rW, rH, baseWidth, cols, rows) {
             ratioWInput.value = rW;
             ratioHInput.value = rH;
-            resWInput.value = targetWidth;
+            resWInput.value = baseWidth;
+            resHInput.value = Math.round(baseWidth * (rH / rW));
             gridColsInput.value = cols;
             gridRowsInput.value = rows;
-            lockRatioToggle.checked = true;
             state.lockRatio = true;
-            state.gridCols = cols;
-            state.gridRows = rows;
-
+            lockRatioToggle.checked = true;
             recalculateResolutionFromRatio();
         }
 
-        // 直橫向比例翻轉
+        // 直橫向翻轉
         function swapOrientation() {
             const tempR = ratioWInput.value;
             ratioWInput.value = ratioHInput.value;
@@ -766,34 +799,58 @@
             resWInput.value = resHInput.value;
             resHInput.value = tempRes;
 
-            state.ratioW = parseFloat(ratioWInput.value);
-            state.ratioH = parseFloat(ratioHInput.value);
-            state.resW = parseInt(resWInput.value);
-            state.resH = parseInt(resHInput.value);
+            const tempGrid = gridColsInput.value;
+            gridColsInput.value = gridRowsInput.value;
+            gridRowsInput.value = tempGrid;
 
             updateSimulatorLayout();
         }
 
-        // 快速設定基準寬度 (1280 / 1920 / 3840)
+        // 快速設定基礎寬度 (HD / FHD / 4K)
         function setBaseWidth(w) {
             resWInput.value = w;
             recalculateResolutionFromRatio();
         }
 
-        // 設定是否自動適應視窗大小
-        function setFitMode(isFit) {
-            state.fitMode = isFit;
-            if (isFit) {
-                fitScreenBtn.classList.replace('bg-slate-800', 'bg-blue-600');
-                fitScreenBtn.classList.replace('text-slate-300', 'text-white');
-            } else {
-                fitScreenBtn.classList.replace('bg-blue-600', 'bg-slate-800');
-                fitScreenBtn.classList.replace('text-white', 'text-slate-300');
+        // 當長寬比或寬度改變時，若鎖定比例則自動計算高度
+        function recalculateResolutionFromRatio() {
+            const rW = parseFloat(ratioWInput.value) || 16;
+            const rH = parseFloat(ratioHInput.value) || 9;
+            const resW = parseInt(resWInput.value) || 1920;
+
+            if (lockRatioToggle.checked) {
+                const calculatedH = Math.max(100, Math.round(resW * (rH / rW)));
+                resHInput.value = calculatedH;
             }
             updateSimulatorLayout();
         }
 
-        // 繪製電視牆拼接黑邊網格 (Bezel Overlay)
+        // 當使用者手動修改解析度高度時，自動反推長寬比
+        function onResHeightChange() {
+            const w = parseInt(resWInput.value) || 1920;
+            const h = parseInt(resHInput.value) || 1080;
+            if (!lockRatioToggle.checked) {
+                const gcd = (a, b) => b ? gcd(b, a % b) : a;
+                const divisor = gcd(w, h);
+                ratioWInput.value = Math.round(w / divisor);
+                ratioHInput.value = Math.round(h / divisor);
+            }
+            updateSimulatorLayout();
+        }
+
+        // 切換「自動適應視窗」或「手動縮放」
+        function setFitMode(isFit) {
+            state.fitMode = isFit;
+            const fitBtn = document.getElementById('fitScreenBtn');
+            if (isFit) {
+                fitBtn.className = "px-2.5 py-1 bg-blue-600 text-white text-xs font-medium transition";
+            } else {
+                fitBtn.className = "px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition border border-slate-700";
+            }
+            updateSimulatorLayout();
+        }
+
+        // 繪製電視牆拼接網格黑線 (Bezel Overlay)
         function renderBezelGrid() {
             const cols = Math.max(1, parseInt(gridColsInput.value) || 1);
             const rows = Math.max(1, parseInt(gridRowsInput.value) || 1);
@@ -803,80 +860,429 @@
             state.gridRows = rows;
             state.bezelWidth = bezel;
 
-            // 更新頂部與側邊欄徽章資訊
-            const gridBadge = document.getElementById('gridBadge');
+            const badge = document.getElementById('gridBadge');
             if (cols === 1 && rows === 1) {
-                gridBadge.textContent = '單一螢幕 (1×1)';
-                bezelOverlay.innerHTML = '';
+                badge.textContent = '單一螢幕 (1×1)';
+                bezelOverlay.style.backgroundImage = 'none';
             } else {
-                gridBadge.textContent = `拼接電視牆 (${cols}×${rows} 共 ${cols * rows} 台)`;
-                bezelOverlay.style.display = 'grid';
-                bezelOverlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                bezelOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+                badge.textContent = `${cols}×${rows} 拼接牆 (共 ${cols * rows} 塊螢幕)`;
+                const scale = parseFloat(iframeScaleBox.style.transform.replace('scale(', '').replace(')', '')) || 1;
+                const realBezelPx = Math.max(1, Math.round(bezel / scale));
 
-                let cellsHtml = '';
-                const total = cols * rows;
-                for (let i = 0; i < total; i++) {
-                    cellsHtml += `<div style="border: ${bezel}px solid rgba(10, 15, 24, 0.92); box-shadow: inset 0 0 2px rgba(255,255,255,0.15);" class="relative flex items-end justify-end p-2">
-                        <span class="text-[18px] font-mono text-white/25 bg-black/40 px-2 py-0.5 rounded">#${i + 1}</span>
-                    </div>`;
-                }
-                bezelOverlay.innerHTML = cellsHtml;
+                bezelOverlay.style.backgroundSize = `${100 / cols}% ${100 / rows}%`;
+                bezelOverlay.style.backgroundImage = `
+                    linear-gradient(to right, rgba(0,0,0,0.92) ${realBezelPx}px, transparent ${realBezelPx}px),
+                    linear-gradient(to bottom, rgba(0,0,0,0.92) ${realBezelPx}px, transparent ${realBezelPx}px)
+                `;
             }
 
-            // 計算單塊面板的解析度
             const panelW = Math.round(state.resW / cols);
             const panelH = Math.round(state.resH / rows);
-            document.getElementById('infoPanelRes').textContent = `${panelW} × ${panelH} px`;
+            const infoPanelRes = document.getElementById('infoPanelRes');
+            if (infoPanelRes) {
+                infoPanelRes.textContent = `${panelW} × ${panelH} px`;
+            }
         }
 
-        // 核心：計算縮放比例並更新模擬器舞台尺寸
+        // 核心函式：計算並更新電視牆外框與內部等比例縮放盒
         function updateSimulatorLayout() {
-            const targetW = state.resW;
-            const targetH = state.resH;
+            state.ratioW = parseFloat(ratioWInput.value) || 16;
+            state.ratioH = parseFloat(ratioHInput.value) || 9;
+            const targetW = Math.max(100, parseInt(resWInput.value) || 1920);
+            const targetH = Math.max(100, parseInt(resHInput.value) || 1080);
 
-            // 取得舞台可用空間 (扣除內距確保美觀)
-            const stageRect = stageContainer.getBoundingClientRect();
-            const padding = 80;
-            const availW = Math.max(200, stageRect.width - padding);
-            const availH = Math.max(200, stageRect.height - padding);
+            state.resW = targetW;
+            state.resH = targetH;
 
             let scale = state.manualScale;
             if (state.fitMode) {
-                const scaleX = availW / targetW;
-                const scaleY = availH / targetH;
-                scale = Math.min(scaleX, scaleY);
-                // 限制最大自動放大倍率為 1.2 倍，避免小解析度過大失真
-                scale = Math.min(Math.max(scale, 0.05), 1.2);
+                const padding = 88;
+                const availW = Math.max(200, stageContainer.clientWidth - padding);
+                const availH = Math.max(160, stageContainer.clientHeight - padding);
+                scale = Math.min(availW / targetW, availH / targetH, 1.5);
                 manualScaleSlider.value = Math.round(scale * 100);
             }
 
-            const scaledW = Math.round(targetW * scale);
-            const scaledH = Math.round(targetH * scale);
+            const visualW = Math.round(targetW * scale);
+            const visualH = Math.round(targetH * scale);
 
-            // 設定外框容器為縮放後的視覺尺寸
-            tvOuterWrapper.style.width = `${scaledW}px`;
-            tvOuterWrapper.style.height = `${scaledH}px`;
+            tvOuterWrapper.style.width = `${visualW}px`;
+            tvOuterWrapper.style.height = `${visualH}px`;
 
-            // 設定內層 iframe 容器為「真實目標解析度」，並透過 CSS Transform 進行硬體加速縮放
             iframeScaleBox.style.width = `${targetW}px`;
             iframeScaleBox.style.height = `${targetH}px`;
             iframeScaleBox.style.transform = `scale(${scale})`;
-            iframeScaleBox.style.position = 'absolute';
-            iframeScaleBox.style.top = '0';
-            iframeScaleBox.style.left = '0';
 
-            // 更新資訊列文字
             document.getElementById('infoRatio').textContent = `${state.ratioW} : ${state.ratioH}`;
             document.getElementById('infoResolution').textContent = `${targetW} × ${targetH} px`;
             document.getElementById('infoScale').textContent = `${Math.round(scale * 100)}%`;
             document.getElementById('tvTopTagText').textContent = `比例 ${state.ratioW}:${state.ratioH} | 真實渲染 ${targetW}×${targetH}px (縮放 ${Math.round(scale * 100)}%)`;
 
             renderBezelGrid();
+            applySlideFitStyling();
+        }
+
+        // =========================================================================
+        // PDF / PPTX / 圖片 / 影片 簡報渲染與縮放引擎
+        // =========================================================================
+        function deactivateMediaLayer() {
+            state.activeMediaType = 'none';
+            document.getElementById('mediaPresentationLayer').classList.add('hidden');
+            document.getElementById('slideNavControls').classList.add('hidden');
+            document.getElementById('floatingSlideHud').classList.add('hidden');
+            previewIframe.classList.remove('hidden');
+        }
+
+        function activateMediaLayer(type, filename) {
+            state.activeMediaType = type;
+            previewIframe.classList.add('hidden');
+            const layer = document.getElementById('mediaPresentationLayer');
+            layer.classList.remove('hidden');
+
+            document.getElementById('pdfRenderCanvas').classList.toggle('hidden', type !== 'pdf');
+            document.getElementById('pptxRenderContainer').classList.toggle('hidden', type !== 'pptx');
+            document.getElementById('imageRenderEl').classList.toggle('hidden', type !== 'image');
+            document.getElementById('videoRenderEl').classList.toggle('hidden', type !== 'video');
+
+            const isMultiPage = (type === 'pdf' || type === 'pptx');
+            document.getElementById('slideNavControls').classList.toggle('hidden', !isMultiPage);
+            document.getElementById('floatingSlideHud').classList.toggle('hidden', !isMultiPage);
+
+            document.getElementById('slideFileName').textContent = filename || '已載入媒體';
+            const badge = document.getElementById('sourceModeBadge');
+            if (badge) {
+                badge.textContent = `目前來源：${type.toUpperCase()} (${filename})`;
+                badge.className = 'text-[10px] font-mono px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20';
+            }
+            applySlideFitStyling();
+        }
+
+        // 設定簡報在電視牆上的縮放填充方式 (Contain 留黑邊 / Fill 強制拉伸滿版 / Cover 裁切填滿)
+        function setSlideFitMode(mode) {
+            state.slideFitMode = mode;
+            const modes = ['contain', 'fill', 'cover'];
+            const btnIds = { contain: 'fitBtnContain', fill: 'fitBtnFill', cover: 'fitBtnCover' };
+
+            modes.forEach(m => {
+                const btn = document.getElementById(btnIds[m]);
+                if (!btn) return;
+                if (m === mode) {
+                    btn.className = "py-1.5 px-2 bg-blue-600 text-white text-[11px] font-medium border border-blue-400 transition";
+                } else {
+                    btn.className = "py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium border border-slate-700 transition";
+                }
+            });
+
+            applySlideFitStyling();
+            if (state.activeMediaType === 'pptx') {
+                renderCurrentPptxSlide();
+            }
+        }
+
+        // 根據目前選擇的縮放模式 (contain / fill / cover) 調整 PDF Canvas、圖片或 PPTX 容器的 CSS
+        function applySlideFitStyling() {
+            if (state.activeMediaType === 'none') return;
+            const mode = state.slideFitMode;
+            const pdfCanvas = document.getElementById('pdfRenderCanvas');
+            const imgEl = document.getElementById('imageRenderEl');
+            const vidEl = document.getElementById('videoRenderEl');
+
+            [pdfCanvas, imgEl, vidEl].forEach(el => {
+                if (!el) return;
+                el.style.width = '100%';
+                el.style.height = '100%';
+                el.style.objectFit = mode; // 'contain' | 'fill' | 'cover'
+            });
+        }
+
+        // 切換投影片上下頁
+        async function changeSlidePage(delta) {
+            if (state.activeMediaType !== 'pdf' && state.activeMediaType !== 'pptx') return;
+            const next = state.currentSlide + delta;
+            if (next < 1 || next > state.totalSlides) return;
+            state.currentSlide = next;
+            updateSlidePageIndicator();
+
+            if (state.activeMediaType === 'pdf') {
+                await renderCurrentPdfPage();
+            } else if (state.activeMediaType === 'pptx') {
+                renderCurrentPptxSlide();
+            }
+        }
+
+        function updateSlidePageIndicator() {
+            document.getElementById('currentSlideNum').textContent = state.currentSlide;
+            document.getElementById('totalSlideNum').textContent = state.totalSlides;
+            document.getElementById('hudSlidePageText').textContent = `${state.currentSlide} / ${state.totalSlides}`;
+        }
+
+        // 1. 載入並渲染 PDF 檔案
+        async function loadPdfFile(file) {
+            try {
+                showToast('正在解析 PDF 簡報...', `讀取 ${file.name} 中`, 'fa-solid fa-spinner fa-spin text-amber-400', 0);
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                state.pdfDoc = pdf;
+                state.currentSlide = 1;
+                state.totalSlides = pdf.numPages;
+
+                activateMediaLayer('pdf', file.name);
+                updateSlidePageIndicator();
+                await renderCurrentPdfPage();
+
+                showToast('PDF 簡報載入完成！', `共 ${pdf.numPages} 頁，可使用左右方向鍵 (←/→) 翻頁，並切換縮放模式`, 'fa-solid fa-file-pdf text-emerald-400', 4000);
+            } catch (err) {
+                console.error('PDF 解析失敗:', err);
+                showToast('PDF 載入失敗', '請確認檔案是否損毀或受密碼保護', 'fa-solid fa-triangle-exclamation text-rose-500', 4000);
+            }
+        }
+
+        async function renderCurrentPdfPage() {
+            if (!state.pdfDoc) return;
+            const page = await state.pdfDoc.getPage(state.currentSlide);
+            const canvas = document.getElementById('pdfRenderCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // 以高解析度 (基礎 2x ~ 3x) 渲染 PDF 頁面，確保在 4K 電視牆上依然銳利清晰
+            const baseViewport = page.getViewport({ scale: 1 });
+            const targetScale = Math.max(2, Math.min(4, Math.max(state.resW / baseViewport.width, state.resH / baseViewport.height)));
+            const viewport = page.getViewport({ scale: targetScale });
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise;
+
+            applySlideFitStyling();
+        }
+
+        // 2. 載入並解析 PPTX 檔案 (使用 JSZip 解析投影片文字、圖片與尺寸)
+        async function loadPptxFile(file) {
+            try {
+                showToast('正在解析 PPTX 投影片...', `解壓縮並提取 ${file.name} 內容中`, 'fa-solid fa-spinner fa-spin text-amber-400', 0);
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
+
+                // 讀取 presentation.xml 取得原始投影片長寬比例
+                let slideRatioW = 16, slideRatioH = 9;
+                const presXmlFile = zip.file('ppt/presentation.xml');
+                if (presXmlFile) {
+                    const presXmlText = await presXmlFile.async('text');
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(presXmlText, 'application/xml');
+                    const sldSz = xmlDoc.getElementsByTagName('p:sldSz')[0] || xmlDoc.getElementsByTagName('sldSz')[0];
+                    if (sldSz) {
+                        const cx = parseInt(sldSz.getAttribute('cx'));
+                        const cy = parseInt(sldSz.getAttribute('cy'));
+                        if (cx && cy) {
+                            slideRatioW = cx;
+                            slideRatioH = cy;
+                        }
+                    }
+                }
+
+                // 找出所有 ppt/slides/slideX.xml 並依頁碼排序
+                const slideFiles = [];
+                zip.folder('ppt/slides')?.forEach((relativePath, zipEntry) => {
+                    const match = relativePath.match(/^slide(\d+)\.xml$/);
+                    if (match) {
+                        slideFiles.push({ num: parseInt(match[1]), entry: zipEntry, path: relativePath });
+                    }
+                });
+                slideFiles.sort((a, b) => a.num - b.num);
+
+                if (slideFiles.length === 0) {
+                    throw new Error('找不到有效的 PPTX 投影片結構');
+                }
+
+                // 預先載入 ppt/media/ 下的所有圖片轉為 Blob URL
+                const mediaMap = {};
+                const mediaFolder = zip.folder('ppt/media');
+                if (mediaFolder) {
+                    const mediaPromises = [];
+                    mediaFolder.forEach((relPath, entry) => {
+                        mediaPromises.push(
+                            entry.async('blob').then(blob => {
+                                mediaMap[relPath] = URL.createObjectURL(blob);
+                            })
+                        );
+                    });
+                    await Promise.all(mediaPromises);
+                }
+
+                const parsedSlides = [];
+                const parser = new DOMParser();
+
+                for (const s of slideFiles) {
+                    const xmlText = await s.entry.async('text');
+                    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+
+                    // 提取該頁所有文字段落
+                    const paragraphs = [];
+                    const pNodes = xmlDoc.getElementsByTagName('a:p');
+                    for (let i = 0; i < pNodes.length; i++) {
+                        const tNodes = pNodes[i].getElementsByTagName('a:t');
+                        let lineText = '';
+                        for (let j = 0; j < tNodes.length; j++) {
+                            lineText += tNodes[j].textContent;
+                        }
+                        if (lineText.trim()) {
+                            paragraphs.push(lineText.trim());
+                        }
+                    }
+
+                    // 讀取對應的 _rels/slideX.xml.rels 找出該頁引用的圖片
+                    const slideImages = [];
+                    const relFile = zip.file(`ppt/slides/_rels/slide${s.num}.xml.rels`);
+                    if (relFile) {
+                        const relText = await relFile.async('text');
+                        const relDoc = parser.parseFromString(relText, 'application/xml');
+                        const rels = relDoc.getElementsByTagName('Relationship');
+                        for (let k = 0; k < rels.length; k++) {
+                            const target = rels[k].getAttribute('Target') || '';
+                            if (target.includes('../media/')) {
+                                const mediaName = target.replace('../media/', '');
+                                if (mediaMap[mediaName]) {
+                                    slideImages.push(mediaMap[mediaName]);
+                                }
+                            }
+                        }
+                    }
+
+                    parsedSlides.push({
+                        pageNum: s.num,
+                        paragraphs,
+                        images: slideImages,
+                        ratioW: slideRatioW,
+                        ratioH: slideRatioH
+                    });
+                }
+
+                state.pptxSlides = parsedSlides;
+                state.currentSlide = 1;
+                state.totalSlides = parsedSlides.length;
+
+                activateMediaLayer('pptx', file.name);
+                updateSlidePageIndicator();
+                renderCurrentPptxSlide();
+
+                showToast(
+                    `PPTX 載入成功（共 ${parsedSlides.length} 頁）`,
+                    '已提取投影片圖文！若需 100% 原始動畫字型排版，建議將 PPT 另存為 PDF 後匯入',
+                    'fa-solid fa-file-powerpoint text-amber-400',
+                    5500
+                );
+            } catch (err) {
+                console.error('PPTX 解析錯誤:', err);
+                showToast(
+                    '無法直接讀取舊版 .ppt 或加密檔',
+                    '請在 PowerPoint 另存為「.pptx」或「.pdf」格式後再匯入模擬器',
+                    'fa-solid fa-circle-exclamation text-rose-400',
+                    5000
+                );
+            }
+        }
+
+        // 渲染單頁 PPTX 內容並套用使用者選擇的縮放比例模式
+        function renderCurrentPptxSlide() {
+            const container = document.getElementById('pptxRenderContainer');
+            const slide = state.pptxSlides[state.currentSlide - 1];
+            if (!slide) return;
+
+            // 計算原始簡報比例盒子 (預設 1920x1080 或 4:3 的 1440x1080)
+            const baseW = 1920;
+            const baseH = Math.round(baseW * (slide.ratioH / slide.ratioW));
+
+            // 計算如何將 baseW x baseH 放進 state.resW x state.resH
+            let scaleX = state.resW / baseW;
+            let scaleY = state.resH / baseH;
+            if (state.slideFitMode === 'contain') {
+                const s = Math.min(scaleX, scaleY);
+                scaleX = s;
+                scaleY = s;
+            } else if (state.slideFitMode === 'cover') {
+                const s = Math.max(scaleX, scaleY);
+                scaleX = s;
+                scaleY = s;
+            }
+            // 若為 'fill' 則保留獨立的 scaleX 與 scaleY 強制拉伸滿版
+
+            const title = slide.paragraphs[0] || `Slide #${slide.pageNum}`;
+            const bodyLines = slide.paragraphs.slice(1);
+            const hasImages = slide.images.length > 0;
+
+            let bgLayerHtml = '';
+            if (slide.images.length === 1 && bodyLines.length === 0) {
+                // 若整頁只有一張滿版圖 (常見於圖片型簡報)
+                bgLayerHtml = `<img src="${slide.images[0]}" class="w-full h-full object-cover absolute inset-0" />`;
+            }
+
+            let contentGridHtml = '';
+            if (!bgLayerHtml) {
+                const textSection = `
+                    <div class="${hasImages ? 'w-1/2' : 'w-full'} flex flex-col justify-center space-y-6 z-10 pr-6">
+                        <div class="inline-flex items-center gap-2 text-amber-400 font-mono text-xl uppercase tracking-widest">
+                            <span>PPTX SLIDE ${state.currentSlide} / ${state.totalSlides}</span>
+                        </div>
+                        <h1 class="text-5xl font-black text-white leading-tight border-l-8 border-amber-500 pl-6">${title}</h1>
+                        <div class="space-y-4 pl-8 pt-2">
+                            ${bodyLines.map(line => `<p class="text-3xl text-slate-200 leading-relaxed flex items-start gap-3"><span class="text-amber-400 mt-1">▪</span><span>${line}</span></p>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const imageSection = hasImages ? `
+                    <div class="w-1/2 h-full flex items-center justify-center gap-4 flex-wrap z-10">
+                        ${slide.images.slice(0, 4).map(imgUrl => `
+                            <img src="${imgUrl}" class="max-h-[75%] max-w-full object-contain border border-slate-700 shadow-2xl bg-slate-950/50 p-2" />
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                contentGridHtml = `
+                    <div class="w-full h-full p-20 flex items-center justify-between bg-gradient-to-br from-slate-900 via-slate-950 to-black relative">
+                        ${textSection}
+                        ${imageSection}
+                        <div class="absolute bottom-6 right-10 text-lg font-mono text-slate-500">
+                            PPTX Native Preview · Page ${state.currentSlide}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div style="width:${baseW}px; height:${baseH}px; transform: scale(${scaleX}, ${scaleY}); transform-origin: center center;" class="relative overflow-hidden shadow-2xl shrink-0">
+                    ${bgLayerHtml || contentGridHtml}
+                </div>
+            `;
+        }
+
+        // 3. 載入單張高解析圖片或影片檔
+        function loadMediaImageOrVideo(file, isVideo) {
+            const url = URL.createObjectURL(file);
+            if (isVideo) {
+                const vid = document.getElementById('videoRenderEl');
+                vid.src = url;
+                activateMediaLayer('video', file.name);
+            } else {
+                const img = document.getElementById('imageRenderEl');
+                img.src = url;
+                activateMediaLayer('image', file.name);
+            }
+            showToast(
+                '媒體檔案已載入！',
+                `您可於左側切換「完整顯示 / 拉伸滿版 / 裁切填滿」測試在不同電視牆比例下的效果`,
+                'fa-solid fa-image text-emerald-400',
+                4000
+            );
         }
 
         // 將使用者的 HTML 原始碼注入到 iframe 預覽
         function renderHTMLToIframe() {
+            deactivateMediaLayer();
             const code = htmlCodeInput.value.trim();
             const badge = document.getElementById('sourceModeBadge');
             if (badge) {
@@ -901,6 +1307,7 @@
 
         // 將使用者輸入的網址 (URL) 載入到 iframe 預覽
         function renderURLToIframe() {
+            deactivateMediaLayer();
             const urlInput = document.getElementById('urlInput');
             let url = urlInput.value.trim();
             if (!url) return;
@@ -1173,10 +1580,12 @@
         // 功能 1：一鍵精準截取模擬區域畫面 (Screenshot)
         // ==========================================
         async function captureScreenWall() {
+            const hud = document.getElementById('floatingSlideHud');
             try {
                 setSimulatorCursorHidden(true);
+                if (hud) hud.style.visibility = 'hidden';
                 const { video } = await getOrInitCaptureStream(false);
-                // 等待一幀確保游標已完全隱藏
+                // 等待一幀確保游標與懸浮翻頁列已完全隱藏
                 await new Promise(r => requestAnimationFrame(r));
 
                 const outCanvas = document.createElement('canvas');
@@ -1194,6 +1603,7 @@
 
                 drawSimulatorFrameToCanvas(video, outCanvas);
                 if (!isRecording) setSimulatorCursorHidden(false);
+                if (hud) hud.style.visibility = 'visible';
 
                 outCanvas.toBlob((blob) => {
                     if (!blob) return;
@@ -1211,6 +1621,7 @@
 
             } catch (err) {
                 if (!isRecording) setSimulatorCursorHidden(false);
+                if (hud) hud.style.visibility = 'visible';
                 console.warn('截圖授權取消或失敗:', err);
                 showToast('已取消截圖', '請在瀏覽器彈出視窗點選「共用此分頁」，即可直接截取完整模擬器畫面', 'fa-solid fa-circle-info text-slate-400', 4000);
             }
@@ -1411,8 +1822,89 @@
             recordBtnText.textContent = "開始錄影";
         }
 
+        // ==========================================
+        // 多功能鍵盤快捷鍵處理 (支援主視窗與模擬器 Iframe 內部焦點)
+        // ==========================================
+        function handleGlobalShortcuts(e) {
+            const code = e.code;
+            const activeTag = document.activeElement ? document.activeElement.tagName.toUpperCase() : '';
+            const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA');
+
+            // 若目前正在預覽 PDF 或 PPTX 簡報，且焦點不在文字輸入框，支援左右方向鍵 (← / →) 快速翻頁
+            if (!isTyping && (state.activeMediaType === 'pdf' || state.activeMediaType === 'pptx')) {
+                if (code === 'ArrowRight' || code === 'PageDown') {
+                    e.preventDefault();
+                    changeSlidePage(1);
+                    return;
+                }
+                if (code === 'ArrowLeft' || code === 'PageUp') {
+                    e.preventDefault();
+                    changeSlidePage(-1);
+                    return;
+                }
+            }
+
+            // 單鍵快速觸發：F8 截圖、F9 開始/停止錄影 (方便單手操作畫面時一鍵盲按)
+            if (code === 'F8') {
+                e.preventDefault();
+                captureScreenWall();
+                return;
+            }
+            if (code === 'F9') {
+                e.preventDefault();
+                toggleRecording();
+                return;
+            }
+
+            // 組合鍵：Alt + 字母 (macOS 為 Option + 字母)，使用 e.code 避免輸入法干擾
+            if (e.altKey && !e.ctrlKey && !e.metaKey) {
+                switch (code) {
+                    case 'KeyS': // Alt + S：瞬間截圖
+                        e.preventDefault();
+                        captureScreenWall();
+                        break;
+                    case 'KeyR': // Alt + R：開始 / 停止錄影
+                        e.preventDefault();
+                        toggleRecording();
+                        break;
+                    case 'KeyM': // Alt + M：開關麥克風
+                        e.preventDefault();
+                        toggleMicOption();
+                        break;
+                    case 'KeyB': // Alt + B：收合 / 展開左側面板
+                        e.preventDefault();
+                        toggleSidebar();
+                        break;
+                    case 'KeyF': // Alt + F：自動適應視窗縮放
+                        e.preventDefault();
+                        setFitMode(true);
+                        break;
+                    case 'KeyO': // Alt + O：直橫向比例翻轉
+                        e.preventDefault();
+                        swapOrientation();
+                        break;
+                }
+            }
+        }
+
+        // 將快捷鍵監聽同步注入至同源 Iframe 內部，確保滑鼠正在操作模擬畫面內容時也能直接按快捷鍵
+        function bindShortcutsToIframe() {
+            try {
+                const iframeWin = previewIframe.contentWindow;
+                if (iframeWin) {
+                    iframeWin.removeEventListener('keydown', handleGlobalShortcuts);
+                    iframeWin.addEventListener('keydown', handleGlobalShortcuts);
+                }
+            } catch (e) {
+                // 若為跨網域外部 URL 則由主視窗負責監聽
+            }
+        }
+
         // 事件監聽綁定
         function initEvents() {
+            // 綁定全局鍵盤快捷鍵
+            window.addEventListener('keydown', handleGlobalShortcuts);
+
             // 比例與解析度輸入變更
             ratioWInput.addEventListener('input', recalculateResolutionFromRatio);
             ratioHInput.addEventListener('input', recalculateResolutionFromRatio);
@@ -1460,9 +1952,9 @@
                     setSimulatorCursorHidden(true);
                 }
             });
-
-            // 當 Iframe 重新載入內容時，若正在錄影則自動套用隱藏游標
+            // 當 Iframe 重新載入內容時，若正在錄影則自動套用隱藏游標，並重新綁定內部快捷鍵
             previewIframe.addEventListener('load', () => {
+                bindShortcutsToIframe();
                 if (isRecording) {
                     setSimulatorCursorHidden(true);
                 }
@@ -1492,17 +1984,34 @@
                 renderHTMLToIframe();
             });
 
-            // 匯入本地 .html 檔案
-            document.getElementById('fileUpload').addEventListener('change', (e) => {
+            // 匯入本地檔案 (.html / .pdf / .pptx / 圖片 / 影片)
+            document.getElementById('fileUpload').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    htmlCodeInput.value = event.target.result;
-                    renderHTMLToIframe();
+                const fileName = file.name.toLowerCase();
+
+                if (fileName.endsWith('.pdf')) {
                     switchTab('code');
-                };
-                reader.readAsText(file);
+                    await loadPdfFile(file);
+                } else if (fileName.endsWith('.pptx') || fileName.endsWith('.ppt')) {
+                    switchTab('code');
+                    await loadPptxFile(file);
+                } else if (/\.(png|jpg|jpeg|webp|svg|gif)$/i.test(fileName)) {
+                    switchTab('code');
+                    loadMediaImageOrVideo(file, false);
+                } else if (/\.(mp4|webm|mov)$/i.test(fileName)) {
+                    switchTab('code');
+                    loadMediaImageOrVideo(file, true);
+                } else {
+                    // 預設當作 HTML 原始碼讀取
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        htmlCodeInput.value = event.target.result;
+                        renderHTMLToIframe();
+                        switchTab('code');
+                    };
+                    reader.readAsText(file);
+                }
                 e.target.value = ''; // 允許重複選取同檔案
             });
 
