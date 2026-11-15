@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DisplayWall Sim - 多尺寸螢幕與電視牆網頁模擬器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Inter 與 Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 html2canvas 供高品質 DOM 截圖與 Canvas 錄製輔助 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#0a0f18',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 自訂捲軸樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 0px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* 畫布網格背景 */
+        .bg-grid-pattern {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        }
+
+        /* 電視外框發光與立體效果 */
+        .tv-bezel-shadow {
+            box-shadow: 
+                0 0 0 2px #334155,
+                0 25px 50px -12px rgba(0, 0, 0, 0.85),
+                0 0 40px rgba(59, 130, 246, 0.15);
+        }
+
+        /* 隱藏數字輸入框的上下箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* 強制全局無圓角 (直角設計) */
+        *, *::before, *::after {
+            border-radius: 0px !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- 頂部導覽列 -->
+    <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-tv text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-wide flex items-center gap-2.5">
+                    <span>DisplayWall Sim</span>
+                    <span class="text-sm font-sans font-medium text-white">多尺寸螢幕與電視牆模擬器</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- 頂部快速狀態與工具 -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- 截圖與錄影控制組 -->
+            <div class="flex items-center bg-slate-950 p-1 border border-slate-800 space-x-1">
+                <button id="screenshotBtn" onclick="captureScreenWall()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅擷取模擬器畫面並自動下載 PNG">
+                    <i class="fa-solid fa-camera"></i> <span>截圖下載</span>
+                </button>
+                <button id="recordBtn" onclick="toggleRecording()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅錄製模擬器畫面並自動下載影片">
+                    <i id="recordBtnIcon" class="fa-solid fa-video"></i> <span id="recordBtnText">開始錄影</span>
+                </button>
+            </div>
+
+            <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm flex items-center gap-2 transition" title="切換左側設定面板顯示狀態">
+                <i id="toggleSidebarIcon" class="fa-solid fa-bars-staggered text-blue-400"></i>
+                <span id="toggleSidebarText" class="hidden md:inline">收合左側面板</span>
+            </button>
+            <button id="loadDemoBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="載入範例儀表板程式碼">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden lg:inline">載入智慧城市範例</span>
+            </button>
+            <label for="fileUpload" class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20">
+                <i class="fa-solid fa-folder-open"></i> <span class="hidden sm:inline">匯入 HTML 檔</span>
+                <input id="fileUpload" type="file" accept=".html,.htm" class="hidden">
+            </label>
+        </div>
+    </header>
+
+    <!-- 截圖與錄影狀態提示通知 (Toast) -->
+    <div id="captureToast" class="hidden fixed bottom-12 right-6 z-50 bg-slate-900 border border-blue-500 text-slate-100 px-4 py-3 shadow-2xl flex items-center gap-3 text-xs sm:text-sm">
+        <i id="captureToastIcon" class="fa-solid fa-spinner fa-spin text-blue-400 text-base"></i>
+        <div>
+            <div id="captureToastTitle" class="font-bold text-white">處理中...</div>
+            <div id="captureToastDesc" class="text-xs text-slate-400 mt-0.5">正在準備擷取模擬區域畫面</div>
+        </div>
+    </div>
+
+    <!-- 主內容區 (左側控制面板 + 右側模擬畫布) -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- 左側控制與程式碼面板 -->
+        <aside id="sidebar" class="w-80 sm:w-96 md:w-[420px] bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20 transition-all duration-300 ease-in-out relative">
+            
+            <!-- 面板切換 Tabs -->
+            <div class="flex border-b border-slate-800 bg-slate-950/50 p-1 m-3 rounded-xl">
+                <button id="tabBtnConfig" onclick="switchTab('config')" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-expand text-blue-400"></i> 尺寸與電視牆設定
+                </button>
+                <button id="tabBtnCode" onclick="switchTab('code')" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-code text-emerald-400"></i> 網址 / HTML 原始碼
+                </button>
+            </div>
+
+            <!-- Tab 1: 尺寸與比例設定面板 -->
+            <div id="panelConfig" class="flex-1 overflow-y-auto px-4 pb-6 space-y-4 select-text">
+                
+                <!-- 1. 快速情境預設集 -->
+                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
+                            <i class="fa-solid fa-display w-4 text-center text-blue-400 mr-1.5"></i>常見設備與電視牆預設
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applyPreset(16, 9, 1920, 1, 1)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">標準電視 / 螢幕</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">16:9</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">1920 × 1080 (FHD)</div>
+                        </button>
+
+                        <button onclick="applyPreset(32, 9, 3840, 2, 1)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">超寬螢幕 / 雙聯屏</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">32:9</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">3840 × 1080 (2x1 拼接)</div>
+                        </button>
+
+                        <button onclick="applyPreset(48, 9, 5760, 3, 1)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">三聯屏迎賓橫幅牆</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">48:9</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">5760 × 1080 (3x1 拼接)</div>
+                        </button>
+
+                        <button onclick="applyPreset(9, 16, 1080, 1, 1)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">直立式電子看板</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">9:16</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">1080 × 1920 (Kiosk)</div>
+                        </button>
+
+                        <button onclick="applyPreset(16, 9, 3840, 2, 2)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">2×2 矩陣電視牆</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">16:9</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">3840 × 2160 (4K 拼接)</div>
+                        </button>
+
+                        <button onclick="applyPreset(64, 27, 3840, 4, 3)" class="p-2.5 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/50 rounded-xl text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400">中控室大型電視牆</span>
+                                <span class="text-[10px] font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">64:27</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">3840 × 1620 (4x3 拼接)</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. 自訂螢幕比例與目標解析度 -->
+                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-blue-400 flex items-center">
+                            <i class="fa-solid fa-ruler-combined w-4 text-center mr-1.5"></i>自訂螢幕比例與解析度
+                        </span>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                            <input type="checkbox" id="lockRatioToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                            <span>依比例自動算高度</span>
+                        </label>
+                    </div>
+
+                    <!-- 螢幕長寬比輸入 -->
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1.5">螢幕外觀比例 (寬比 : 高比)</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <input type="number" id="ratioW" value="16" min="1" step="0.1" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg px-3 py-2 text-sm font-mono text-center text-white focus:outline-none">
+                                <span class="absolute right-2.5 top-2.5 text-[10px] text-slate-500">寬</span>
+                            </div>
+                            <span class="text-slate-400 font-bold">:</span>
+                            <div class="relative flex-1">
+                                <input type="number" id="ratioH" value="9" min="1" step="0.1" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg px-3 py-2 text-sm font-mono text-center text-white focus:outline-none">
+                                <span class="absolute right-2.5 top-2.5 text-[10px] text-slate-500">高</span>
+                            </div>
+                            <button onclick="swapOrientation()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition" title="直橫向翻轉">
+                                <i class="fa-solid fa-rotate"></i> 翻轉
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 實際渲染解析度輸入 (決定網頁內部的 CSS Viewport 大小) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs text-slate-400">網頁內部渲染解析度 (Pixels)</label>
+                            <span class="text-[11px] text-slate-500">影響 RWD 斷點與字體大小</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <input type="number" id="resW" value="1920" min="100" max="15360" step="10" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg pl-3 pr-8 py-2 text-sm font-mono text-white focus:outline-none">
+                                <span class="absolute right-2.5 top-2.5 text-xs text-slate-500 font-mono">px</span>
+                            </div>
+                            <span class="text-slate-500 text-xs">×</span>
+                            <div class="relative flex-1">
+                                <input type="number" id="resH" value="1080" min="100" max="15360" step="10" class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg pl-3 pr-8 py-2 text-sm font-mono text-white focus:outline-none">
+                                <span class="absolute right-2.5 top-2.5 text-xs text-slate-500 font-mono">px</span>
+                            </div>
+                        </div>
+                        <!-- 快速基礎寬度切換 -->
+                        <div class="flex gap-1.5 mt-2">
+                            <button onclick="setBaseWidth(1280)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] text-slate-300 font-mono transition">HD (1280w)</button>
+                            <button onclick="setBaseWidth(1920)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] text-slate-300 font-mono transition">FHD (1920w)</button>
+                            <button onclick="setBaseWidth(3840)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] text-slate-300 font-mono transition">4K (3840w)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 電視牆拼接網格模擬 (Bezel Grid Overlay) -->
+                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400 flex items-center">
+                            <i class="fa-solid fa-border-all w-4 text-center mr-1.5"></i>電視牆螢幕拼縫模擬 (選填)
+                        </span>
+                        <span id="gridBadge" class="text-[11px] font-mono bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/20">單一螢幕 (1×1)</span>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        若您的目標是由多台螢幕拼接而成的電視牆，可設定行列數，檢查重要文字是否剛好被電視邊框（黑邊）切到。
+                    </p>
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">水平螢幕數 (欄)</label>
+                            <input type="number" id="gridCols" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">垂直螢幕數 (列)</label>
+                            <input type="number" id="gridRows" value="1" min="1" max="16" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">拼縫粗細 (px)</label>
+                            <input type="number" id="bezelWidth" value="3" min="0" max="20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono text-center text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 畫面填充與外框檢視選項 -->
+                <div class="bg-slate-950/60 p-4 border border-slate-800/80 space-y-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center">
+                        <i class="fa-solid fa-eye w-4 text-center mr-1.5"></i>外框與顯示輔助
+                    </span>
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span>顯示擬真電視外框與環境光</span>
+                        <input type="checkbox" id="showFrameToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span>顯示中心十字對齊輔助線</span>
+                        <input type="checkbox" id="showCenterGuides" class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-300 pt-1 border-t border-slate-800/80">
+                        <span>截圖/錄影時包含電視牆拼縫黑線</span>
+                        <input type="checkbox" id="captureIncludeBezel" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Tab 2: 網址與 HTML 程式碼編輯器面板 -->
+            <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-hidden select-text space-y-4">
+                
+                <!-- 區塊 A: 網址 (URL) 輸入區 -->
+                <div class="bg-slate-950/70 p-3.5 border border-slate-800 space-y-2.5 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">
+                            <i class="fa-solid fa-globe mr-1"></i> 方式 1：輸入網頁網址 (URL)
+                        </span>
+                        <span id="sourceModeBadge" class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">目前來源：HTML 原始碼</span>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <input type="text" id="urlInput" placeholder="https://example.com 或 http://localhost:3000" class="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-500 px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                        <button onclick="renderURLToIframe()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition shrink-0 flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 載入網址
+                        </button>
+                    </div>
+                    <!-- 快速範例網址與提示 -->
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span>快速測試：</span>
+                            <button onclick="quickLoadUrl('https://zh.wikipedia.org')" class="text-sky-400 hover:underline font-mono">Wikipedia</button>
+                            <span>·</span>
+                            <button onclick="quickLoadUrl('https://example.com')" class="text-sky-400 hover:underline font-mono">Example.com</button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed border-t border-slate-800/80 pt-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400/80 mr-1"></i>注意：部分外部商業網站（如 Google、YouTube）因設有 <code class="text-slate-400">X-Frame-Options</code> 防護，瀏覽器會禁止嵌入預覽；您自己的專案或 localhost 則可正常顯示。
+                    </p>
+                </div>
+
+                <!-- 區塊 B: 貼上 HTML 原始碼區 -->
+                <div class="flex-1 flex flex-col min-h-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                            <i class="fa-solid fa-code mr-1"></i> 方式 2：貼上 HTML 原始碼
+                        </span>
+                        <div class="flex gap-2">
+                            <button onclick="clearCode()" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 transition">
+                                <i class="fa-solid fa-trash-can mr-1"></i>清空代碼
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <textarea id="htmlCodeInput" spellcheck="false" placeholder="在此貼上您的 <html>...</html> 程式碼..." class="flex-1 w-full bg-slate-950 border border-slate-800 focus:border-blue-500 p-3 font-mono text-xs text-emerald-300 leading-relaxed focus:outline-none resize-none"></textarea>
+                    
+                    <div class="mt-3 flex items-center justify-between gap-2 shrink-0">
+                        <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                            <input type="checkbox" id="liveUpdateToggle" checked class="bg-slate-800 border-slate-700 text-blue-500">
+                            <span>打字時自動即時更新</span>
+                        </label>
+                        <button onclick="renderHTMLToIframe()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-play"></i> 套用 HTML 原始碼
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- 右側主模擬預覽區 -->
+        <main class="flex-1 flex flex-col bg-slate-950 bg-grid-pattern relative overflow-hidden">
+            
+            <!-- 側邊欄邊緣快速收合/展開把手按鈕 -->
+            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-5 h-16 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center transition shadow-lg" title="收合/展開左側視窗">
+                <i id="edgeCollapseIcon" class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+
+            <!-- 模擬區頂部資訊儀表列 -->
+            <div class="h-12 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 flex items-center justify-between z-10 text-xs">
+                <div class="flex items-center space-x-4 overflow-x-auto py-1">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400">目標比例:</span>
+                        <span id="infoRatio" class="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">16 : 9</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400">內部實際解析度:</span>
+                        <span id="infoResolution" class="font-mono font-semibold text-slate-200">1920 × 1080 px</span>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400">單塊螢幕解析度:</span>
+                        <span id="infoPanelRes" class="font-mono text-slate-300">1920 × 1080 px</span>
+                    </div>
+                </div>
+
+                <!-- 畫面縮放控制 -->
+                <div class="flex items-center space-x-2 shrink-0">
+                    <span class="text-slate-400 hidden md:inline">預覽縮放:</span>
+                    <span id="infoScale" class="font-mono text-amber-400 font-semibold w-12 text-right">50%</span>
+                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white rounded font-medium transition text-xs" title="自動縮放至視窗大小">
+                        自適應視窗
+                    </button>
+                    <input type="range" id="manualScaleSlider" min="10" max="150" value="50" class="w-20 sm:w-28 accent-blue-500 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- 畫布中央舞台 (Viewport Container) -->
+            <div id="stageContainer" class="flex-1 relative overflow-auto flex items-center justify-center p-6 sm:p-10">
+                
+                <!-- 外層包裝器：負責在畫布上佔據「縮放後的實際視覺寬高」 -->
+                <div id="tvOuterWrapper" class="relative transition-all duration-150 ease-out tv-bezel-shadow rounded-none bg-black flex items-center justify-center">
+                    
+                    <!-- 電視頂部狀態小標籤 -->
+                    <div id="tvTopTag" class="absolute -top-7 left-0 flex items-center gap-2 text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                        <span class="w-2 h-2 bg-emerald-400 animate-pulse"></span>
+                        <span id="tvTopTagText">16:9 模擬器 (1920×1080)</span>
+                    </div>
+
+                    <!-- 內層縮放容器：固定為目標解析度 (如 1920x1080)，並透過 CSS transform: scale() 等比縮放 -->
+                    <div id="iframeScaleBox" class="relative overflow-hidden bg-white origin-top-left">
+                        <!-- 實際渲染使用者 HTML 的 iframe -->
+                        <iframe id="previewIframe" class="w-full h-full border-0 block" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+
+                        <!-- 電視牆拼接黑邊覆蓋層 (Bezel Grid Overlay) -->
+                        <div id="bezelOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
+
+                        <!-- 中心十字輔助線覆蓋層 -->
+                        <div id="centerGuidesOverlay" class="hidden absolute inset-0 pointer-events-none z-20">
+                            <div class="absolute inset-y-0 left-1/2 border-l border-dashed border-rose-500/70"></div>
+                            <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-rose-500/70"></div>
+                        </div>
+                    </div>
+
+                    <!-- 擬真電視下巴與電源燈 -->
+                    <div id="tvChin" class="absolute -bottom-3 inset-x-0 h-3 bg-slate-800 rounded-none border-t border-slate-700 flex items-center justify-center">
+                        <div class="w-8 h-1 bg-slate-600"></div>
+                        <div class="w-1.5 h-1.5 bg-red-500/80 absolute right-4"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 底部快捷提示列 -->
+            <div class="h-8 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                <div>
+                    <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>
+                    提示：模擬器會以您設定的「內部實際解析度」渲染網頁，再等比例縮放至您的螢幕，確保排版、字體與 RWD 斷點 100% 貼近真實電視牆。
+                </div>
+                <div class="hidden sm:block font-mono text-slate-500">
+                    Viewport Transform Engine v1.0
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- JavaScript 核心邏輯 -->
+    <script>
+        // 預設範例 HTML：一個具有科技感的「智慧城市與數據戰情室電視牆」範例網頁
+        const DEFAULT_DEMO_HTML = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    color: #f8fafc;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+  }
+  .font-cyber { font-family: 'Orbitron', sans-serif; }
+  .glass-card {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 25px rgba(14, 165, 233, 0.1);
+  }
+  @keyframes pulse-slow {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+  .animate-radar { animation: pulse-slow 4s infinite ease-in-out; }
+</style>
+</head>
+<body class="p-6 flex flex-col justify-between select-none">
+  <!-- 頂部標題列 -->
+  <header class="flex items-center justify-between border-b border-sky-500/30 pb-4 shrink-0">
+    <div class="flex items-center gap-4">
+      <div class="w-4 h-10 bg-sky-400 shadow-[0_0_15px_#38bdf8]"></div>
+      <div>
+        <h1 class="text-3xl md:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-cyan-200 to-indigo-300">
+          SMART CITY 智慧城市營運戰情室
+        </h1>
+        <p class="text-xs md:text-sm text-sky-400/80 tracking-widest uppercase font-cyber">
+          Real-Time Urban Matrix & Screen Wall Simulation Demo
+        </p>
+      </div>
+    </div>
+    <div class="text-right font-cyber">
+      <div id="clock" class="text-2xl md:text-3xl font-bold text-sky-300">14:32:58</div>
+      <div id="resBadge" class="text-xs text-emerald-400 mt-1">偵測螢幕尺寸中...</div>
+    </div>
+  </header>
+
+  <!-- 中央主體網格：會隨寬高比自動延展 -->
+  <main class="flex-1 grid grid-cols-12 gap-6 my-6 min-h-0">
+    <!-- 左側指標欄 -->
+    <section class="col-span-12 sm:col-span-3 flex flex-col gap-4 justify-between">
+      <div class="glass-card p-5 flex-1 flex flex-col justify-center">
+        <span class="text-sky-400 text-sm font-bold tracking-wider">全市即時能源負載</span>
+        <div class="text-4xl lg:text-5xl font-cyber font-extrabold text-white mt-2">84.6 <span class="text-xl text-sky-400">%</span></div>
+        <div class="w-full bg-slate-800 h-2.5 mt-4 overflow-hidden">
+          <div class="bg-gradient-to-r from-sky-400 to-emerald-400 h-full" style="width: 84.6%"></div>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">綠能供電佔比：38.2% (運作穩定)</p>
+      </div>
+
+      <div class="glass-card p-5 flex-1 flex flex-col justify-center">
+        <span class="text-indigo-400 text-sm font-bold tracking-wider">智慧交通順暢指數</span>
+        <div class="text-4xl lg:text-5xl font-cyber font-extrabold text-emerald-400 mt-2">92.4 <span class="text-xl text-slate-400">pts</span></div>
+        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+          <div class="bg-slate-900/90 p-2 border border-slate-800">
+            <div class="text-xs text-slate-400">北區高速</div>
+            <div class="text-sm font-bold text-emerald-400 mt-0.5">順暢</div>
+          </div>
+          <div class="bg-slate-900/90 p-2 border border-slate-800">
+            <div class="text-xs text-slate-400">市中心環線</div>
+            <div class="text-sm font-bold text-amber-400 mt-0.5">車多</div>
+          </div>
+          <div class="bg-slate-900/90 p-2 border border-slate-800">
+            <div class="text-xs text-slate-400">跨海大橋</div>
+            <div class="text-sm font-bold text-emerald-400 mt-0.5">順暢</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 中央核心視覺區 -->
+    <section class="col-span-12 sm:col-span-6 glass-card p-6 relative overflow-hidden flex flex-col items-center justify-center">
+      <!-- 裝飾性雷達方框 -->
+      <div class="w-64 h-64 md:w-80 md:h-80 border-2 border-dashed border-sky-500/40 flex items-center justify-center animate-radar relative">
+        <div class="w-48 h-48 md:w-60 md:h-60 border border-cyan-400/50 bg-sky-500/10 flex flex-col items-center justify-center text-center p-4">
+          <span class="text-xs uppercase tracking-widest text-sky-300 font-cyber">Active Viewport</span>
+          <div id="centerResText" class="text-2xl md:text-3xl font-cyber font-black text-white my-1">1920 × 1080</div>
+          <span id="centerRatioText" class="px-3 py-1 bg-sky-500/20 border border-sky-400/40 text-xs text-sky-200 font-bold mt-1">
+            Aspect Ratio 16:9
+          </span>
+        </div>
+      </div>
+
+      <div class="absolute bottom-5 inset-x-6 flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+        <span>提示：切換左側「32:9 超寬螢幕」或「9:16 直立看板」觀察此畫面排版變化</span>
+        <span class="text-sky-400 font-mono">LIVE TELEMETRY</span>
+      </div>
+    </section>
+
+    <!-- 右側數據欄 -->
+    <section class="col-span-12 sm:col-span-3 flex flex-col gap-4 justify-between">
+      <div class="glass-card p-5 flex-1 flex flex-col justify-between">
+        <span class="text-cyan-400 text-sm font-bold tracking-wider">區域感測節點狀態</span>
+        <div class="space-y-3 my-auto">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-300">空氣品質監測站</span>
+            <span class="font-mono text-emerald-400 font-bold">1,024 / 1,024</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-300">智慧路燈控制網</span>
+            <span class="font-mono text-emerald-400 font-bold">18,450 Online</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-300">防災水位感測器</span>
+            <span class="font-mono text-sky-400 font-bold">99.98% 正常</span>
+          </div>
+        </div>
+        <div class="text-xs text-right text-slate-500 font-mono">UPDATED: JUST NOW</div>
+      </div>
+
+      <div class="glass-card p-5 flex-1 flex flex-col justify-center bg-gradient-to-br from-sky-950/60 to-indigo-950/60">
+        <span class="text-amber-400 text-sm font-bold tracking-wider">系統提示通知</span>
+        <p class="text-base font-bold text-white mt-2">目前畫面正在模擬電視牆真實解析度渲染</p>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          您可以在左側貼上您自己設計的 HTML 程式碼，立即檢視在不同比例下的視覺效果。
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 底部資訊列 -->
+  <footer class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3 shrink-0">
+    <div>SYSTEM STATUS: <span class="text-emerald-400 font-bold">OPTIMAL</span></div>
+    <div class="font-mono">DISPLAY-WALL SIMULATION ENGINE READY</div>
+  </footer>
+
+  <script>
+    function updateInfo() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      document.getElementById('centerResText').textContent = w + ' × ' + h;
+      document.getElementById('resBadge').textContent = '目前內部視窗: ' + w + 'px × ' + h + 'px';
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      const d = gcd(w, h);
+      document.getElementById('centerRatioText').textContent = '比例約 ' + Math.round(w/d) + ' : ' + Math.round(h/d);
+    }
+    window.addEventListener('resize', updateInfo);
+    updateInfo();
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+    }, 1000);
+  <\/script>
+</body>
+</html>`;
+
+        // 狀態管理變數
+        let state = {
+            ratioW: 16,
+            ratioH: 9,
+            resW: 1920,
+            resH: 1080,
+            lockRatio: true,
+            gridCols: 1,
+            gridRows: 1,
+            bezelWidth: 3,
+            fitMode: true,
+            manualScale: 0.5,
+            showFrame: true,
+            showCenterGuides: false,
+            sidebarCollapsed: false
+        };
+
+        // DOM 元素參照
+        const ratioWInput = document.getElementById('ratioW');
+        const ratioHInput = document.getElementById('ratioH');
+        const resWInput = document.getElementById('resW');
+        const resHInput = document.getElementById('resH');
+        const lockRatioToggle = document.getElementById('lockRatioToggle');
+        const gridColsInput = document.getElementById('gridCols');
+        const gridRowsInput = document.getElementById('gridRows');
+        const bezelWidthInput = document.getElementById('bezelWidth');
+        const htmlCodeInput = document.getElementById('htmlCodeInput');
+        const previewIframe = document.getElementById('previewIframe');
+        const stageContainer = document.getElementById('stageContainer');
+        const tvOuterWrapper = document.getElementById('tvOuterWrapper');
+        const iframeScaleBox = document.getElementById('iframeScaleBox');
+        const bezelOverlay = document.getElementById('bezelOverlay');
+        const centerGuidesOverlay = document.getElementById('centerGuidesOverlay');
+        const manualScaleSlider = document.getElementById('manualScaleSlider');
+        const fitScreenBtn = document.getElementById('fitScreenBtn');
+
+        // 切換左側分頁 (設定 vs 程式碼)
+        function switchTab(tab) {
+            const panelConfig = document.getElementById('panelConfig');
+            const panelCode = document.getElementById('panelCode');
+            const btnConfig = document.getElementById('tabBtnConfig');
+            const btnCode = document.getElementById('tabBtnCode');
+
+            if (tab === 'config') {
+                panelConfig.classList.remove('hidden');
+                panelCode.classList.add('hidden');
+                btnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
+                btnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
+            } else {
+                panelConfig.classList.add('hidden');
+                panelCode.classList.remove('hidden');
+                btnCode.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 text-white shadow flex items-center justify-center gap-2 transition";
+                btnConfig.className = "flex-1 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
+            }
+        }
+
+        // 根據比例與寬度重新計算高度
+        function recalculateResolutionFromRatio() {
+            state.ratioW = Math.max(0.1, parseFloat(ratioWInput.value) || 16);
+            state.ratioH = Math.max(0.1, parseFloat(ratioHInput.value) || 9);
+            state.resW = Math.max(100, parseInt(resWInput.value) || 1920);
+
+            if (state.lockRatio) {
+                state.resH = Math.round(state.resW * (state.ratioH / state.ratioW));
+                resHInput.value = state.resH;
+            } else {
+                state.resH = Math.max(100, parseInt(resHInput.value) || 1080);
+            }
+            updateSimulatorLayout();
+        }
+
+        // 當使用者直接修改解析度高度時，若未鎖定比例則反向更新比例顯示
+        function onResHeightChange() {
+            state.resW = Math.max(100, parseInt(resWInput.value) || 1920);
+            state.resH = Math.max(100, parseInt(resHInput.value) || 1080);
+
+            if (state.lockRatio) {
+                // 若鎖定比例但手改高度，則依高度反推寬度
+                state.resW = Math.round(state.resH * (state.ratioW / state.ratioH));
+                resWInput.value = state.resW;
+            } else {
+                // 約分計算出新的長寬比
+                const gcd = (a, b) => b ? gcd(b, a % b) : a;
+                const divisor = gcd(state.resW, state.resH);
+                state.ratioW = Math.round((state.resW / divisor) * 10) / 10;
+                state.ratioH = Math.round((state.resH / divisor) * 10) / 10;
+                ratioWInput.value = state.ratioW;
+                ratioHInput.value = state.ratioH;
+            }
+            updateSimulatorLayout();
+        }
+
+        // 套用預設情境
+        function applyPreset(rW, rH, targetWidth, cols, rows) {
+            ratioWInput.value = rW;
+            ratioHInput.value = rH;
+            resWInput.value = targetWidth;
+            gridColsInput.value = cols;
+            gridRowsInput.value = rows;
+            lockRatioToggle.checked = true;
+            state.lockRatio = true;
+            state.gridCols = cols;
+            state.gridRows = rows;
+
+            recalculateResolutionFromRatio();
+        }
+
+        // 直橫向比例翻轉
+        function swapOrientation() {
+            const tempR = ratioWInput.value;
+            ratioWInput.value = ratioHInput.value;
+            ratioHInput.value = tempR;
+
+            const tempRes = resWInput.value;
+            resWInput.value = resHInput.value;
+            resHInput.value = tempRes;
+
+            state.ratioW = parseFloat(ratioWInput.value);
+            state.ratioH = parseFloat(ratioHInput.value);
+            state.resW = parseInt(resWInput.value);
+            state.resH = parseInt(resHInput.value);
+
+            updateSimulatorLayout();
+        }
+
+        // 快速設定基準寬度 (1280 / 1920 / 3840)
+        function setBaseWidth(w) {
+            resWInput.value = w;
+            recalculateResolutionFromRatio();
+        }
+
+        // 設定是否自動適應視窗大小
+        function setFitMode(isFit) {
+            state.fitMode = isFit;
+            if (isFit) {
+                fitScreenBtn.classList.replace('bg-slate-800', 'bg-blue-600');
+                fitScreenBtn.classList.replace('text-slate-300', 'text-white');
+            } else {
+                fitScreenBtn.classList.replace('bg-blue-600', 'bg-slate-800');
+                fitScreenBtn.classList.replace('text-white', 'text-slate-300');
+            }
+            updateSimulatorLayout();
+        }
+
+        // 繪製電視牆拼接黑邊網格 (Bezel Overlay)
+        function renderBezelGrid() {
+            const cols = Math.max(1, parseInt(gridColsInput.value) || 1);
+            const rows = Math.max(1, parseInt(gridRowsInput.value) || 1);
+            const bezel = Math.max(0, parseInt(bezelWidthInput.value) || 0);
+
+            state.gridCols = cols;
+            state.gridRows = rows;
+            state.bezelWidth = bezel;
+
+            // 更新頂部與側邊欄徽章資訊
+            const gridBadge = document.getElementById('gridBadge');
+            if (cols === 1 && rows === 1) {
+                gridBadge.textContent = '單一螢幕 (1×1)';
+                bezelOverlay.innerHTML = '';
+            } else {
+                gridBadge.textContent = `拼接電視牆 (${cols}×${rows} 共 ${cols * rows} 台)`;
+                bezelOverlay.style.display = 'grid';
+                bezelOverlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                bezelOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+                let cellsHtml = '';
+                const total = cols * rows;
+                for (let i = 0; i < total; i++) {
+                    cellsHtml += `<div style="border: ${bezel}px solid rgba(10, 15, 24, 0.92); box-shadow: inset 0 0 2px rgba(255,255,255,0.15);" class="relative flex items-end justify-end p-2">
+                        <span class="text-[18px] font-mono text-white/25 bg-black/40 px-2 py-0.5 rounded">#${i + 1}</span>
+                    </div>`;
+                }
+                bezelOverlay.innerHTML = cellsHtml;
+            }
+
+            // 計算單塊面板的解析度
+            const panelW = Math.round(state.resW / cols);
+            const panelH = Math.round(state.resH / rows);
+            document.getElementById('infoPanelRes').textContent = `${panelW} × ${panelH} px`;
+        }
+
+        // 核心：計算縮放比例並更新模擬器舞台尺寸
+        function updateSimulatorLayout() {
+            const targetW = state.resW;
+            const targetH = state.resH;
+
+            // 取得舞台可用空間 (扣除內距確保美觀)
+            const stageRect = stageContainer.getBoundingClientRect();
+            const padding = 80;
+            const availW = Math.max(200, stageRect.width - padding);
+            const availH = Math.max(200, stageRect.height - padding);
+
+            let scale = state.manualScale;
+            if (state.fitMode) {
+                const scaleX = availW / targetW;
+                const scaleY = availH / targetH;
+                scale = Math.min(scaleX, scaleY);
+                // 限制最大自動放大倍率為 1.2 倍，避免小解析度過大失真
+                scale = Math.min(Math.max(scale, 0.05), 1.2);
+                manualScaleSlider.value = Math.round(scale * 100);
+            }
+
+            const scaledW = Math.round(targetW * scale);
+            const scaledH = Math.round(targetH * scale);
+
+            // 設定外框容器為縮放後的視覺尺寸
+            tvOuterWrapper.style.width = `${scaledW}px`;
+            tvOuterWrapper.style.height = `${scaledH}px`;
+
+            // 設定內層 iframe 容器為「真實目標解析度」，並透過 CSS Transform 進行硬體加速縮放
+            iframeScaleBox.style.width = `${targetW}px`;
+            iframeScaleBox.style.height = `${targetH}px`;
+            iframeScaleBox.style.transform = `scale(${scale})`;
+            iframeScaleBox.style.position = 'absolute';
+            iframeScaleBox.style.top = '0';
+            iframeScaleBox.style.left = '0';
+
+            // 更新資訊列文字
+            document.getElementById('infoRatio').textContent = `${state.ratioW} : ${state.ratioH}`;
+            document.getElementById('infoResolution').textContent = `${targetW} × ${targetH} px`;
+            document.getElementById('infoScale').textContent = `${Math.round(scale * 100)}%`;
+            document.getElementById('tvTopTagText').textContent = `比例 ${state.ratioW}:${state.ratioH} | 真實渲染 ${targetW}×${targetH}px (縮放 ${Math.round(scale * 100)}%)`;
+
+            renderBezelGrid();
+        }
+
+        // 將使用者的 HTML 原始碼注入到 iframe 預覽
+        function renderHTMLToIframe() {
+            const code = htmlCodeInput.value.trim();
+            const badge = document.getElementById('sourceModeBadge');
+            if (badge) {
+                badge.textContent = '目前來源：HTML 原始碼';
+                badge.className = 'text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            }
+
+            // 清除先前的 src 網址設定，改由 srcdoc 渲染
+            previewIframe.removeAttribute('src');
+
+            if (!code) {
+                previewIframe.srcdoc = `<body style="background:#0f172a;color:#64748b;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">
+                    <div style="text-align:center;">
+                        <h2 style="color:#94a3b8;margin-bottom:8px;">尚未載入網址或 HTML 內容</h2>
+                        <p style="font-size:14px;">請在左側輸入「網頁網址 (URL)」、貼入「HTML 原始碼」，或點擊上方「匯入 HTML 檔」</p>
+                    </div>
+                </body>`;
+                return;
+            }
+            previewIframe.srcdoc = code;
+        }
+
+        // 將使用者輸入的網址 (URL) 載入到 iframe 預覽
+        function renderURLToIframe() {
+            const urlInput = document.getElementById('urlInput');
+            let url = urlInput.value.trim();
+            if (!url) return;
+
+            // 若未包含 http:// 或 https://，自動補上 https:// (若為 localhost 則補 http://)
+            if (!/^https?:\/\//i.test(url)) {
+                if (url.startsWith('localhost') || url.startsWith('127.0.0.1')) {
+                    url = 'http://' + url;
+                } else {
+                    url = 'https://' + url;
+                }
+                urlInput.value = url;
+            }
+
+            // 移除 srcdoc 屬性，讓 iframe 優先讀取 src 外部網址
+            previewIframe.removeAttribute('srcdoc');
+            previewIframe.src = url;
+
+            const badge = document.getElementById('sourceModeBadge');
+            if (badge) {
+                badge.textContent = '目前來源：外部網址 (URL)';
+                badge.className = 'text-[10px] font-mono px-2 py-0.5 bg-sky-500/10 text-sky-400 border border-sky-500/20';
+            }
+        }
+
+        // 快速填入並載入測試網址
+        function quickLoadUrl(url) {
+            document.getElementById('urlInput').value = url;
+            renderURLToIframe();
+        }
+
+        // 清空程式碼
+        function clearCode() {
+            htmlCodeInput.value = '';
+            renderHTMLToIframe();
+        }
+
+        // 切換左側面板收合與展開
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const edgeIcon = document.getElementById('edgeCollapseIcon');
+            const topText = document.getElementById('toggleSidebarText');
+
+            state.sidebarCollapsed = !state.sidebarCollapsed;
+
+            if (state.sidebarCollapsed) {
+                sidebar.style.marginLeft = `-${sidebar.offsetWidth}px`;
+                edgeIcon.className = 'fa-solid fa-chevron-right text-xs';
+                topText.textContent = '展開左側面板';
+            } else {
+                sidebar.style.marginLeft = '0px';
+                edgeIcon.className = 'fa-solid fa-chevron-left text-xs';
+                topText.textContent = '收合左側面板';
+            }
+
+            // 等待收合動畫進行與完成時，重新計算右側模擬器自適應縮放尺寸
+            setTimeout(() => {
+                if (state.fitMode) updateSimulatorLayout();
+            }, 150);
+            setTimeout(() => {
+                if (state.fitMode) updateSimulatorLayout();
+            }, 320);
+        }
+
+        // 顯示右下角狀態通知 (Toast)
+        let toastTimer = null;
+        function showToast(title, desc, iconClass = 'fa-solid fa-circle-check text-emerald-400', autoHideMs = 4000) {
+            const toast = document.getElementById('captureToast');
+            document.getElementById('captureToastTitle').textContent = title;
+            document.getElementById('captureToastDesc').textContent = desc;
+            document.getElementById('captureToastIcon').className = `${iconClass} text-base`;
+            toast.classList.remove('hidden');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            if (autoHideMs > 0) {
+                toastTimer = setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, autoHideMs);
+            }
+        }
+
+        // 輔助函式：在 Canvas 上繪製電視牆拼接網格與中心十字線
+        function drawOverlaysOnCanvas(ctx, width, height) {
+            const includeBezel = document.getElementById('captureIncludeBezel').checked;
+            if (includeBezel && (state.gridCols > 1 || state.gridRows > 1) && state.bezelWidth > 0) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(10, 15, 24, 0.95)';
+                ctx.lineWidth = state.bezelWidth * 2;
+                const cellW = width / state.gridCols;
+                const cellH = height / state.gridRows;
+
+                // 繪製垂直拼縫
+                for (let c = 1; c < state.gridCols; c++) {
+                    const x = Math.round(c * cellW);
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                // 繪製水平拼縫
+                for (let r = 1; r < state.gridRows; r++) {
+                    const y = Math.round(r * cellH);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                // 外框黑邊
+                ctx.strokeRect(0, 0, width, height);
+                ctx.restore();
+            }
+
+            if (document.getElementById('showCenterGuides').checked) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(244, 63, 94, 0.75)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 8]);
+                ctx.beginPath();
+                ctx.moveTo(width / 2, 0);
+                ctx.lineTo(width / 2, height);
+                ctx.moveTo(0, height / 2);
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // 觸發檔案自動下載
+        function triggerDownload(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 產生帶比例與解析度的檔名
+        function getFormattedFilename(prefix, ext) {
+            const now = new Date();
+            const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+            return `${prefix}_${state.ratioW}x${state.ratioH}_${state.resW}x${state.resH}_${ts}.${ext}`;
+        }
+
+        // ==========================================
+        // 功能 1：精準擷取模擬區域畫面 (Screenshot)
+        // ==========================================
+        async function captureScreenWall() {
+            const btn = document.getElementById('screenshotBtn');
+            btn.disabled = true;
+            showToast('正在擷取電視牆畫面...', `目標尺寸：${state.resW} × ${state.resH} (${state.ratioW}:${state.ratioH})`, 'fa-solid fa-spinner fa-spin text-emerald-400', 0);
+
+            try {
+                // 優先嘗試直接透過 html2canvas 渲染同源 HTML 內容 (無須權限提示、100% 原始目標解析度)
+                const iframeDoc = previewIframe.contentDocument || (previewIframe.contentWindow && previewIframe.contentWindow.document);
+                if (iframeDoc && iframeDoc.body && !previewIframe.getAttribute('src')) {
+                    const renderedCanvas = await html2canvas(iframeDoc.documentElement, {
+                        width: state.resW,
+                        height: state.resH,
+                        windowWidth: state.resW,
+                        windowHeight: state.resH,
+                        scale: 1,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#000000',
+                        logging: false
+                    });
+
+                    const ctx = renderedCanvas.getContext('2d');
+                    drawOverlaysOnCanvas(ctx, state.resW, state.resH);
+
+                    const dataUrl = renderedCanvas.toDataURL('image/png');
+                    const filename = getFormattedFilename('DisplayWall_Shot', 'png');
+                    triggerDownload(dataUrl, filename);
+                    showToast('截圖完成！已自動下載', `檔案：${filename}`, 'fa-solid fa-circle-check text-emerald-400', 4000);
+                    btn.disabled = false;
+                    return;
+                }
+            } catch (err) {
+                console.warn('DOM 直接渲染受限，切換至螢幕區域光學裁切模式:', err);
+            }
+
+            // 備援方案（如載入外部跨域 URL 時）：使用瀏覽器 getDisplayMedia + 自動裁切模擬器座標
+            try {
+                showToast('請在彈出視窗選擇「此分頁」', '外部網址需透過瀏覽器畫面擷取並自動裁切模擬區域', 'fa-solid fa-display text-sky-400', 0);
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { displaySurface: 'browser' },
+                    audio: false,
+                    preferCurrentTab: true
+                });
+
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+
+                // 等待一小段時間確保畫面穩定
+                await new Promise(r => setTimeout(r, 200));
+
+                const rect = tvOuterWrapper.getBoundingClientRect();
+                const scaleX = video.videoWidth / window.innerWidth;
+                const scaleY = video.videoHeight / window.innerHeight;
+
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = state.resW;
+                cropCanvas.height = state.resH;
+                const ctx = cropCanvas.getContext('2d');
+
+                ctx.drawImage(
+                    video,
+                    rect.left * scaleX,
+                    rect.top * scaleY,
+                    rect.width * scaleX,
+                    rect.height * scaleY,
+                    0,
+                    0,
+                    state.resW,
+                    state.resH
+                );
+
+                // 停止串流
+                stream.getTracks().forEach(t => t.stop());
+
+                const dataUrl = cropCanvas.toDataURL('image/png');
+                const filename = getFormattedFilename('DisplayWall_Shot', 'png');
+                triggerDownload(dataUrl, filename);
+                showToast('截圖完成！已自動下載', `檔案：${filename}`, 'fa-solid fa-circle-check text-emerald-400', 4000);
+            } catch (err) {
+                showToast('截圖已取消或失敗', '若為外部網址，請允許分享目前分頁以完成模擬區域裁切', 'fa-solid fa-triangle-exclamation text-amber-400', 4000);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // 功能 2：精準錄製模擬區域畫面 (Video Recording)
+        // ==========================================
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingStream = null;
+        let recordingAnimFrame = null;
+        let recordingTimerInterval = null;
+        let recordingSeconds = 0;
+
+        async function toggleRecording() {
+            if (isRecording) {
+                stopScreenWallRecording();
+            } else {
+                await startScreenWallRecording();
+            }
+        }
+
+        async function startScreenWallRecording() {
+            const recordBtn = document.getElementById('recordBtn');
+            const recordBtnIcon = document.getElementById('recordBtnIcon');
+            const recordBtnText = document.getElementById('recordBtnText');
+
+            try {
+                showToast('準備開始錄影...', '請在瀏覽器提示中選擇「此分頁」並點選共用，系統將自動只裁切電視牆區域', 'fa-solid fa-video text-rose-400', 0);
+
+                // 取得當前分頁高畫質串流 (支援 preferCurrentTab 讓使用者一鍵確認)
+                recordingStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        displaySurface: 'browser',
+                        frameRate: { ideal: 30, max: 60 }
+                    },
+                    audio: false,
+                    preferCurrentTab: true
+                });
+
+                const sourceVideo = document.createElement('video');
+                sourceVideo.srcObject = recordingStream;
+                sourceVideo.muted = true;
+                await sourceVideo.play();
+
+                // 建立只屬於模擬區域比例的離屏 Canvas
+                const recCanvas = document.createElement('canvas');
+                // 為確保流暢度與相容性，若目標寬度超過 3840 則維持等比例縮放至 3840 內錄製
+                const maxRecDim = 3840;
+                let recW = state.resW;
+                let recH = state.resH;
+                if (recW > maxRecDim || recH > maxRecDim) {
+                    const ratio = Math.min(maxRecDim / recW, maxRecDim / recH);
+                    recW = Math.round(recW * ratio);
+                    recH = Math.round(recH * ratio);
+                }
+                // 確保偶數像素以符合編碼器規範
+                recCanvas.width = recW % 2 === 0 ? recW : recW + 1;
+                recCanvas.height = recH % 2 === 0 ? recH : recH + 1;
+                const ctx = recCanvas.getContext('2d');
+
+                isRecording = true;
+                recordedChunks = [];
+                recordingSeconds = 0;
+
+                // 即時將分頁中的「模擬器外框座標」裁切繪製至錄影專用 Canvas
+                function drawFrame() {
+                    if (!isRecording) return;
+                    const rect = tvOuterWrapper.getBoundingClientRect();
+                    const scaleX = sourceVideo.videoWidth / window.innerWidth;
+                    const scaleY = sourceVideo.videoHeight / window.innerHeight;
+
+                    ctx.clearRect(0, 0, recCanvas.width, recCanvas.height);
+                    ctx.drawImage(
+                        sourceVideo,
+                        Math.max(0, rect.left * scaleX),
+                        Math.max(0, rect.top * scaleY),
+                        Math.max(1, rect.width * scaleX),
+                        Math.max(1, rect.height * scaleY),
+                        0,
+                        0,
+                        recCanvas.width,
+                        recCanvas.height
+                    );
+                    recordingAnimFrame = requestAnimationFrame(drawFrame);
+                }
+                drawFrame();
+
+                // 從裁切後的 Canvas 擷取 30FPS 視訊串流
+                const canvasStream = recCanvas.captureStream(30);
+
+                // 選擇最佳影片編碼格式 (優先支援 MP4，其次 WebM)
+                const mimeTypes = [
+                    'video/mp4;codecs=avc1',
+                    'video/mp4',
+                    'video/webm;codecs=vp9',
+                    'video/webm;codecs=vp8',
+                    'video/webm'
+                ];
+                let selectedMime = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+
+                mediaRecorder = new MediaRecorder(canvasStream, {
+                    mimeType: selectedMime,
+                    videoBitsPerSecond: 8000000 // 8 Mbps 高畫質
+                });
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const ext = selectedMime.includes('mp4') ? 'mp4' : 'webm';
+                    const blob = new Blob(recordedChunks, { type: selectedMime || 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const filename = getFormattedFilename('DisplayWall_Record', ext);
+                    triggerDownload(url, filename);
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+                    showToast('錄影完成！已自動下載至電腦', `檔案：${filename}`, 'fa-solid fa-film text-emerald-400', 5000);
+                };
+
+                // 若使用者從瀏覽器原生停止共用按鈕中斷，也自動儲存影片
+                recordingStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    if (isRecording) stopScreenWallRecording();
+                });
+
+                mediaRecorder.start(200);
+
+                // 更新按鈕外觀為「錄影中」
+                recordBtn.className = "px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition animate-pulse";
+                recordBtnIcon.className = "fa-solid fa-stop";
+                recordBtnText.textContent = "停止錄影 (00:00)";
+
+                recordingTimerInterval = setInterval(() => {
+                    recordingSeconds++;
+                    const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                    const s = String(recordingSeconds % 60).padStart(2, '0');
+                    recordBtnText.textContent = `停止錄影 (${m}:${s})`;
+                }, 1000);
+
+                showToast('正在錄製模擬器畫面...', `僅錄製 ${state.ratioW}:${state.ratioH} 模擬區域，點擊上方「停止錄影」即可下載`, 'fa-solid fa-circle-dot fa-beat text-rose-500', 4000);
+
+            } catch (err) {
+                console.warn('錄影啟動取消或失敗:', err);
+                showToast('已取消錄影', '如需錄製動態畫面，請在彈出視窗中允許分享此分頁', 'fa-solid fa-circle-info text-slate-400', 3500);
+                resetRecordingUI();
+            }
+        }
+
+        function stopScreenWallRecording() {
+            isRecording = false;
+            if (recordingAnimFrame) cancelAnimationFrame(recordingAnimFrame);
+            if (recordingTimerInterval) clearInterval(recordingTimerInterval);
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (recordingStream) {
+                recordingStream.getTracks().forEach(track => track.stop());
+                recordingStream = null;
+            }
+            resetRecordingUI();
+        }
+
+        function resetRecordingUI() {
+            const recordBtn = document.getElementById('recordBtn');
+            const recordBtnIcon = document.getElementById('recordBtnIcon');
+            const recordBtnText = document.getElementById('recordBtnText');
+            recordBtn.className = "px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition";
+            recordBtnIcon.className = "fa-solid fa-video";
+            recordBtnText.textContent = "開始錄影";
+        }
+
+        // 事件監聽綁定
+        function initEvents() {
+            // 比例與解析度輸入變更
+            ratioWInput.addEventListener('input', recalculateResolutionFromRatio);
+            ratioHInput.addEventListener('input', recalculateResolutionFromRatio);
+            resWInput.addEventListener('input', recalculateResolutionFromRatio);
+            resHInput.addEventListener('input', onResHeightChange);
+
+            lockRatioToggle.addEventListener('change', (e) => {
+                state.lockRatio = e.target.checked;
+                if (state.lockRatio) recalculateResolutionFromRatio();
+            });
+
+            // 電視牆拼接設定變更
+            gridColsInput.addEventListener('input', renderBezelGrid);
+            gridRowsInput.addEventListener('input', renderBezelGrid);
+            bezelWidthInput.addEventListener('input', renderBezelGrid);
+
+            // 手動縮放拉桿
+            manualScaleSlider.addEventListener('input', (e) => {
+                state.manualScale = parseInt(e.target.value) / 100;
+                setFitMode(false);
+            });
+
+            // 電視外框與中心線開關
+            document.getElementById('showFrameToggle').addEventListener('change', (e) => {
+                const show = e.target.checked;
+                const tvChin = document.getElementById('tvChin');
+                const tvTopTag = document.getElementById('tvTopTag');
+                if (show) {
+                    tvOuterWrapper.classList.add('tv-bezel-shadow');
+                    tvChin.classList.remove('hidden');
+                    tvTopTag.classList.remove('hidden');
+                } else {
+                    tvOuterWrapper.classList.remove('tv-bezel-shadow');
+                    tvChin.classList.add('hidden');
+                    tvTopTag.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('showCenterGuides').addEventListener('change', (e) => {
+                centerGuidesOverlay.classList.toggle('hidden', !e.target.checked);
+            });
+
+            // 程式碼編輯器即時更新 (加入 Debounce 避免頻繁重繪)
+            let debounceTimer;
+            htmlCodeInput.addEventListener('input', () => {
+                if (!document.getElementById('liveUpdateToggle').checked) return;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    renderHTMLToIframe();
+                }, 350);
+            });
+
+            // 網址輸入框支援按下 Enter 直接載入
+            document.getElementById('urlInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    renderURLToIframe();
+                }
+            });
+
+            // 載入範例按鈕
+            document.getElementById('loadDemoBtn').addEventListener('click', () => {
+                htmlCodeInput.value = DEFAULT_DEMO_HTML;
+                renderHTMLToIframe();
+            });
+
+            // 匯入本地 .html 檔案
+            document.getElementById('fileUpload').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    htmlCodeInput.value = event.target.result;
+                    renderHTMLToIframe();
+                    switchTab('code');
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // 允許重複選取同檔案
+            });
+
+            // 視窗尺寸改變時自動重新計算縮放與側邊欄偏移
+            window.addEventListener('resize', () => {
+                const sidebar = document.getElementById('sidebar');
+                if (state.sidebarCollapsed) {
+                    sidebar.style.marginLeft = `-${sidebar.offsetWidth}px`;
+                }
+                if (state.fitMode) updateSimulatorLayout();
+            });
+        }
+
+        // 初始化啟動
+        window.onload = function () {
+            initEvents();
+            htmlCodeInput.value = DEFAULT_DEMO_HTML;
+            renderHTMLToIframe();
+            updateSimulatorLayout();
+        };
+    </script>
+</body>
+</html>
