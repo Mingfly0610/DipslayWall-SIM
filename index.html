@@ -105,8 +105,12 @@
                 <button id="screenshotBtn" onclick="captureScreenWall()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅擷取模擬器畫面並自動下載 PNG">
                     <i class="fa-solid fa-camera"></i> <span>截圖下載</span>
                 </button>
-                <button id="recordBtn" onclick="toggleRecording()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅錄製模擬器畫面並自動下載影片">
+                <button id="recordBtn" onclick="toggleRecording()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="僅錄製模擬器畫面(含網頁聲音)並自動下載影片">
                     <i id="recordBtnIcon" class="fa-solid fa-video"></i> <span id="recordBtnText">開始錄影</span>
+                </button>
+                <button id="micToggleBtn" onclick="toggleMicOption()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs sm:text-sm font-medium flex items-center gap-1 transition border border-slate-700" title="切換錄影時是否同步錄製麥克風旁白">
+                    <i id="micToggleIcon" class="fa-solid fa-microphone-slash"></i>
+                    <span id="micToggleText" class="hidden xl:inline text-xs">麥克風: 關</span>
                 </button>
             </div>
 
@@ -311,137 +315,144 @@
                         <span>截圖/錄影時包含電視牆拼縫黑線</span>
                         <input type="checkbox" id="captureIncludeBezel" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
                     </div>
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span>錄影時收錄網頁內部聲音 (需勾選共用分頁音訊)</span>
+                        <input type="checkbox" id="recordSystemAudioToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Tab 2: 網址與 HTML 程式碼編輯器面板 -->
-            <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-hidden select-text space-y-4">
+            <!-- Tab 2: 網址 (URL) 與 HTML 原始碼輸入面板 -->
+            <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-hidden select-text space-y-3">
                 
-                <!-- 區塊 A: 網址 (URL) 輸入區 -->
-                <div class="bg-slate-950/70 p-3.5 border border-slate-800 space-y-2.5 shrink-0">
+                <!-- 方式 A：直接輸入網頁網址 (URL) -->
+                <div class="bg-slate-950/80 p-3.5 border border-slate-800 space-y-2.5 shrink-0">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">
-                            <i class="fa-solid fa-globe mr-1"></i> 方式 1：輸入網頁網址 (URL)
+                        <span class="text-xs font-semibold text-sky-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-globe"></i> 方式一：輸入網頁網址 (URL) 預覽
                         </span>
-                        <span id="sourceModeBadge" class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">目前來源：HTML 原始碼</span>
+                        <span id="sourceModeBadge" class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            目前來源：HTML 原始碼
+                        </span>
                     </div>
                     <div class="flex gap-1.5">
-                        <input type="text" id="urlInput" placeholder="https://example.com 或 http://localhost:3000" class="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-500 px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                        <button onclick="renderURLToIframe()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition shrink-0 flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 載入網址
+                        <input type="text" id="urlInput" placeholder="https://example.com 或 http://localhost:3000" 
+                            class="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-500 px-3 py-1.5 text-xs font-mono text-white focus:outline-none">
+                        <button onclick="renderURLToIframe()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition shrink-0 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i> 載入網址
                         </button>
                     </div>
-                    <!-- 快速範例網址與提示 -->
                     <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span>快速測試：</span>
-                            <button onclick="quickLoadUrl('https://zh.wikipedia.org')" class="text-sky-400 hover:underline font-mono">Wikipedia</button>
-                            <span>·</span>
-                            <button onclick="quickLoadUrl('https://example.com')" class="text-sky-400 hover:underline font-mono">Example.com</button>
+                        <span>快速測試範例：</span>
+                        <div class="flex gap-1.5">
+                            <button onclick="quickLoadUrl('https://zh.wikipedia.org')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">維基百科</button>
+                            <button onclick="quickLoadUrl('https://example.com')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Example.com</button>
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-500 leading-relaxed border-t border-slate-800/80 pt-2">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400/80 mr-1"></i>注意：部分外部商業網站（如 Google、YouTube）因設有 <code class="text-slate-400">X-Frame-Options</code> 防護，瀏覽器會禁止嵌入預覽；您自己的專案或 localhost 則可正常顯示。
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400/80 mr-1"></i>註：部分外部網站（如 Google、YouTube）若設定防嵌入保護 (<code class="text-slate-400">X-Frame-Options</code>)，瀏覽器會拒絕在框內顯示。
                     </p>
                 </div>
 
-                <!-- 區塊 B: 貼上 HTML 原始碼區 -->
+                <!-- 方式 B：直接貼上 HTML 原始碼 -->
                 <div class="flex-1 flex flex-col min-h-0">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-                            <i class="fa-solid fa-code mr-1"></i> 方式 2：貼上 HTML 原始碼
+                        <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-code"></i> 方式二：貼上完整 HTML 原始碼
                         </span>
-                        <div class="flex gap-2">
-                            <button onclick="clearCode()" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 transition">
-                                <i class="fa-solid fa-trash-can mr-1"></i>清空代碼
+                        <div class="flex items-center gap-2">
+                            <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="liveUpdateToggle" checked class="bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
+                                <span>即時更新</span>
+                            </label>
+                            <button onclick="clearCode()" class="px-2 py-1 text-xs bg-slate-800 hover:bg-rose-950 hover:text-rose-300 text-slate-400 border border-slate-700 transition">
+                                <i class="fa-solid fa-trash-can mr-1"></i>清空
                             </button>
                         </div>
                     </div>
-                    
-                    <textarea id="htmlCodeInput" spellcheck="false" placeholder="在此貼上您的 <html>...</html> 程式碼..." class="flex-1 w-full bg-slate-950 border border-slate-800 focus:border-blue-500 p-3 font-mono text-xs text-emerald-300 leading-relaxed focus:outline-none resize-none"></textarea>
-                    
-                    <div class="mt-3 flex items-center justify-between gap-2 shrink-0">
-                        <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
-                            <input type="checkbox" id="liveUpdateToggle" checked class="bg-slate-800 border-slate-700 text-blue-500">
-                            <span>打字時自動即時更新</span>
-                        </label>
-                        <button onclick="renderHTMLToIframe()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-play"></i> 套用 HTML 原始碼
-                        </button>
+
+                    <div class="flex-1 relative border border-slate-700/80 overflow-hidden bg-slate-950 focus-within:border-emerald-500 transition min-h-0">
+                        <textarea id="htmlCodeInput" spellcheck="false" placeholder="請在此貼上您的 <!DOCTYPE html> 完整網頁程式碼，或任何 HTML + CSS + JS 片段..." 
+                            class="w-full h-full bg-transparent p-3 text-xs font-mono text-emerald-300 focus:outline-none resize-none leading-relaxed"></textarea>
                     </div>
+
+                    <button onclick="renderHTMLToIframe()" class="mt-3 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-play"></i> 套用並渲染 HTML 原始碼
+                    </button>
                 </div>
             </div>
 
-        </aside>
-
-        <!-- 右側主模擬預覽區 -->
-        <main class="flex-1 flex flex-col bg-slate-950 bg-grid-pattern relative overflow-hidden">
-            
-            <!-- 側邊欄邊緣快速收合/展開把手按鈕 -->
-            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-5 h-16 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center transition shadow-lg" title="收合/展開左側視窗">
+            <!-- 面板右側邊緣快速收合/展開按鈕 -->
+            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center z-30 transition shadow-lg" title="收合 / 展開左側面板">
                 <i id="edgeCollapseIcon" class="fa-solid fa-chevron-left text-xs"></i>
             </button>
+        </aside>
 
-            <!-- 模擬區頂部資訊儀表列 -->
-            <div class="h-12 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 flex items-center justify-between z-10 text-xs">
-                <div class="flex items-center space-x-4 overflow-x-auto py-1">
-                    <div class="flex items-center gap-1.5 shrink-0">
+        <!-- 右側電視牆模擬主畫布 -->
+        <main class="flex-1 flex flex-col bg-slate-950 bg-grid-pattern relative overflow-hidden">
+            
+            <!-- 畫布頂部即時數據資訊列 -->
+            <div class="h-12 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex flex-wrap items-center justify-between gap-2 z-10">
+                <div class="flex items-center space-x-3 sm:space-x-5 text-xs">
+                    <div class="flex items-center gap-1.5">
                         <span class="text-slate-400">目標比例:</span>
-                        <span id="infoRatio" class="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">16 : 9</span>
+                        <span id="infoRatio" class="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 border border-blue-500/20">16 : 9</span>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
+                    <div class="flex items-center gap-1.5">
                         <span class="text-slate-400">內部實際解析度:</span>
-                        <span id="infoResolution" class="font-mono font-semibold text-slate-200">1920 × 1080 px</span>
+                        <span id="infoResolution" class="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20">1920 × 1080 px</span>
                     </div>
-                    <div class="hidden sm:flex items-center gap-1.5 shrink-0">
-                        <span class="text-slate-400">單塊螢幕解析度:</span>
+                    <div class="hidden xl:flex items-center gap-1.5">
+                        <span class="text-slate-400">單塊面板尺寸:</span>
                         <span id="infoPanelRes" class="font-mono text-slate-300">1920 × 1080 px</span>
                     </div>
                 </div>
 
                 <!-- 畫面縮放控制 -->
-                <div class="flex items-center space-x-2 shrink-0">
-                    <span class="text-slate-400 hidden md:inline">預覽縮放:</span>
-                    <span id="infoScale" class="font-mono text-amber-400 font-semibold w-12 text-right">50%</span>
-                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white rounded font-medium transition text-xs" title="自動縮放至視窗大小">
-                        自適應視窗
+                <div class="flex items-center space-x-3 text-xs">
+                    <div class="flex items-center gap-2 bg-slate-950 px-2.5 py-1 border border-slate-800">
+                        <span class="text-slate-400">預覽縮放:</span>
+                        <span id="infoScale" class="font-mono font-bold text-amber-400 w-11 text-right">50%</span>
+                        <input type="range" id="manualScaleSlider" min="10" max="150" value="50" class="w-20 sm:w-24 accent-blue-500 cursor-pointer">
+                    </div>
+                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white font-medium hover:bg-blue-500 transition flex items-center gap-1">
+                        <i class="fa-solid fa-compress"></i> 自動適應視窗
                     </button>
-                    <input type="range" id="manualScaleSlider" min="10" max="150" value="50" class="w-20 sm:w-28 accent-blue-500 cursor-pointer">
                 </div>
             </div>
 
-            <!-- 畫布中央舞台 (Viewport Container) -->
-            <div id="stageContainer" class="flex-1 relative overflow-auto flex items-center justify-center p-6 sm:p-10">
+            <!-- 模擬器核心置中舞台 -->
+            <div id="stageContainer" class="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-auto relative">
                 
-                <!-- 外層包裝器：負責在畫布上佔據「縮放後的實際視覺寬高」 -->
-                <div id="tvOuterWrapper" class="relative transition-all duration-150 ease-out tv-bezel-shadow rounded-none bg-black flex items-center justify-center">
+                <!-- 電視牆外框包裝器 (依縮放後的視覺寬高呈現) -->
+                <div id="tvOuterWrapper" class="relative transition-all duration-150 ease-out tv-bezel-shadow bg-black">
                     
-                    <!-- 電視頂部狀態小標籤 -->
+                    <!-- 頂部懸浮尺寸標籤 -->
                     <div id="tvTopTag" class="absolute -top-7 left-0 flex items-center gap-2 text-[11px] font-mono text-slate-400 whitespace-nowrap">
-                        <span class="w-2 h-2 bg-emerald-400 animate-pulse"></span>
-                        <span id="tvTopTagText">16:9 模擬器 (1920×1080)</span>
+                        <i class="fa-solid fa-display text-blue-400"></i>
+                        <span id="tvTopTagText">16:9 | 1920 × 1080 px</span>
                     </div>
 
-                    <!-- 內層縮放容器：固定為目標解析度 (如 1920x1080)，並透過 CSS transform: scale() 等比縮放 -->
-                    <div id="iframeScaleBox" class="relative overflow-hidden bg-white origin-top-left">
-                        <!-- 實際渲染使用者 HTML 的 iframe -->
-                        <iframe id="previewIframe" class="w-full h-full border-0 block" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+                    <!-- 縮放內部容器 (具有真實目標解析度 width/height，並透過 transform: scale 縮放) -->
+                    <div id="iframeScaleBox" class="origin-top-left relative overflow-hidden bg-slate-950">
+                        <!-- 實際渲染使用者 HTML 的沙盒 Iframe -->
+                        <iframe id="previewIframe" class="w-full h-full border-0 block bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
 
-                        <!-- 電視牆拼接黑邊覆蓋層 (Bezel Grid Overlay) -->
-                        <div id="bezelOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
+                        <!-- 電視牆拼接網格覆蓋層 (Bezel Grid Overlay) -->
+                        <div id="bezelOverlay" class=" pointer-events-none absolute inset-0 z-10"></div>
 
-                        <!-- 中心十字輔助線覆蓋層 -->
-                        <div id="centerGuidesOverlay" class="hidden absolute inset-0 pointer-events-none z-20">
-                            <div class="absolute inset-y-0 left-1/2 border-l border-dashed border-rose-500/70"></div>
-                            <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-rose-500/70"></div>
+                        <!-- 中心十字對齊輔助線 -->
+                        <div id="centerGuidesOverlay" class="hidden pointer-events-none absolute inset-0 z-20">
+                            <div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-cyan-400/60 border-r border-dashed border-white/50"></div>
+                            <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-cyan-400/60 border-b border-dashed border-white/50"></div>
                         </div>
                     </div>
 
-                    <!-- 擬真電視下巴與電源燈 -->
-                    <div id="tvChin" class="absolute -bottom-3 inset-x-0 h-3 bg-slate-800 rounded-none border-t border-slate-700 flex items-center justify-center">
-                        <div class="w-8 h-1 bg-slate-600"></div>
-                        <div class="w-1.5 h-1.5 bg-red-500/80 absolute right-4"></div>
+                    <!-- 擬真電視底部金屬下巴與指示燈 -->
+                    <div id="tvChin" class="absolute -bottom-3 inset-x-0 h-3 bg-gradient-to-b from-slate-700 to-slate-900 border-t border-slate-600 flex items-center justify-center">
+                        <div class="w-8 h-0.5 bg-slate-400/40"></div>
+                        <div class="w-1.5 h-1.5 bg-emerald-400 absolute right-3 shadow-[0_0_6px_#34d399]"></div>
                     </div>
                 </div>
 
@@ -957,52 +968,6 @@
             }
         }
 
-        // 輔助函式：在 Canvas 上繪製電視牆拼接網格與中心十字線
-        function drawOverlaysOnCanvas(ctx, width, height) {
-            const includeBezel = document.getElementById('captureIncludeBezel').checked;
-            if (includeBezel && (state.gridCols > 1 || state.gridRows > 1) && state.bezelWidth > 0) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(10, 15, 24, 0.95)';
-                ctx.lineWidth = state.bezelWidth * 2;
-                const cellW = width / state.gridCols;
-                const cellH = height / state.gridRows;
-
-                // 繪製垂直拼縫
-                for (let c = 1; c < state.gridCols; c++) {
-                    const x = Math.round(c * cellW);
-                    ctx.beginPath();
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, height);
-                    ctx.stroke();
-                }
-                // 繪製水平拼縫
-                for (let r = 1; r < state.gridRows; r++) {
-                    const y = Math.round(r * cellH);
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(width, y);
-                    ctx.stroke();
-                }
-                // 外框黑邊
-                ctx.strokeRect(0, 0, width, height);
-                ctx.restore();
-            }
-
-            if (document.getElementById('showCenterGuides').checked) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(244, 63, 94, 0.75)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([8, 8]);
-                ctx.beginPath();
-                ctx.moveTo(width / 2, 0);
-                ctx.lineTo(width / 2, height);
-                ctx.moveTo(0, height / 2);
-                ctx.lineTo(width, height / 2);
-                ctx.stroke();
-                ctx.restore();
-            }
-        }
-
         // 觸發檔案自動下載
         function triggerDownload(url, filename) {
             const a = document.createElement('a');
@@ -1020,105 +985,196 @@
             return `${prefix}_${state.ratioW}x${state.ratioH}_${state.resW}x${state.resH}_${ts}.${ext}`;
         }
 
-        // ==========================================
-        // 功能 1：精準擷取模擬區域畫面 (Screenshot)
-        // ==========================================
-        async function captureScreenWall() {
-            const btn = document.getElementById('screenshotBtn');
-            btn.disabled = true;
-            showToast('正在擷取電視牆畫面...', `目標尺寸：${state.resW} × ${state.resH} (${state.ratioW}:${state.ratioH})`, 'fa-solid fa-spinner fa-spin text-emerald-400', 0);
+        // =========================================================================
+        // 核心擷取引擎：使用瀏覽器原生光學畫面 + CropTarget 精準鎖定模擬框 (100% 所見即所得)
+        // =========================================================================
+        let sharedCaptureStream = null;
+        let sharedCaptureVideo = null;
+        let isStreamCroppedByBrowser = false;
+        let recordMicEnabled = false;
 
-            try {
-                // 優先嘗試直接透過 html2canvas 渲染同源 HTML 內容 (無須權限提示、100% 原始目標解析度)
-                const iframeDoc = previewIframe.contentDocument || (previewIframe.contentWindow && previewIframe.contentWindow.document);
-                if (iframeDoc && iframeDoc.body && !previewIframe.getAttribute('src')) {
-                    const renderedCanvas = await html2canvas(iframeDoc.documentElement, {
-                        width: state.resW,
-                        height: state.resH,
-                        windowWidth: state.resW,
-                        windowHeight: state.resH,
-                        scale: 1,
-                        useCORS: true,
-                        allowTaint: true,
-                        backgroundColor: '#000000',
-                        logging: false
-                    });
+        // 切換是否同步錄製麥克風聲音
+        function toggleMicOption() {
+            recordMicEnabled = !recordMicEnabled;
+            const btn = document.getElementById('micToggleBtn');
+            const icon = document.getElementById('micToggleIcon');
+            const text = document.getElementById('micToggleText');
 
-                    const ctx = renderedCanvas.getContext('2d');
-                    drawOverlaysOnCanvas(ctx, state.resW, state.resH);
+            if (recordMicEnabled) {
+                btn.className = "px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1 transition border border-indigo-400";
+                icon.className = "fa-solid fa-microphone";
+                text.textContent = "麥克風: 開";
+                showToast('已開啟麥克風混音', '下次點擊「開始錄影」時將同步收錄您的麥克風旁白與網頁聲音', 'fa-solid fa-microphone text-indigo-400', 3000);
+            } else {
+                btn.className = "px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs sm:text-sm font-medium flex items-center gap-1 transition border border-slate-700";
+                icon.className = "fa-solid fa-microphone-slash";
+                text.textContent = "麥克風: 關";
+                showToast('已關閉麥克風收音', '錄影將僅收錄模擬器網頁內部的系統音效', 'fa-solid fa-microphone-slash text-slate-400', 2500);
+            }
+        }
 
-                    const dataUrl = renderedCanvas.toDataURL('image/png');
-                    const filename = getFormattedFilename('DisplayWall_Shot', 'png');
-                    triggerDownload(dataUrl, filename);
-                    showToast('截圖完成！已自動下載', `檔案：${filename}`, 'fa-solid fa-circle-check text-emerald-400', 4000);
-                    btn.disabled = false;
-                    return;
+        // 取得或重用目前的畫面擷取串流（授權一次即可重複瞬間截圖與錄影）
+        async function getOrInitCaptureStream(requireAudio = false) {
+            const wantSysAudio = document.getElementById('recordSystemAudioToggle')?.checked ?? true;
+
+            if (sharedCaptureStream && sharedCaptureStream.active) {
+                const videoTrack = sharedCaptureStream.getVideoTracks()[0];
+                const hasAudioTrack = sharedCaptureStream.getAudioTracks().length > 0;
+
+                // 若之前只點了截圖(未開音訊)，而現在要錄影且需要系統音訊，則不重用舊串流並重新請求帶音訊授權
+                if (videoTrack && videoTrack.readyState === 'live' && (!requireAudio || !wantSysAudio || hasAudioTrack)) {
+                    // 確保每次截圖前重新對準模擬框元素
+                    if (window.CropTarget && typeof videoTrack.cropTo === 'function') {
+                        try {
+                            const target = await CropTarget.fromElement(iframeScaleBox);
+                            await videoTrack.cropTo(target);
+                            isStreamCroppedByBrowser = true;
+                        } catch (e) {
+                            console.warn('CropTarget 更新略過:', e);
+                        }
+                    }
+                    return { stream: sharedCaptureStream, video: sharedCaptureVideo };
                 }
-            } catch (err) {
-                console.warn('DOM 直接渲染受限，切換至螢幕區域光學裁切模式:', err);
             }
 
-            // 備援方案（如載入外部跨域 URL 時）：使用瀏覽器 getDisplayMedia + 自動裁切模擬器座標
-            try {
-                showToast('請在彈出視窗選擇「此分頁」', '外部網址需透過瀏覽器畫面擷取並自動裁切模擬區域', 'fa-solid fa-display text-sky-400', 0);
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { displaySurface: 'browser' },
-                    audio: false,
-                    preferCurrentTab: true
-                });
+            showToast(
+                '請在彈出視窗點選「共用」此分頁',
+                wantSysAudio ? '請確認彈出視窗底部有開啟「一併分享分頁音訊」，即可錄下網頁聲音！' : '只需授權一次，之後點擊截圖或錄影皆可 100% 完整直接截取！',
+                'fa-solid fa-volume-high text-sky-400',
+                0
+            );
 
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                await video.play();
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    displaySurface: 'browser',
+                    frameRate: { ideal: 30, max: 60 }
+                },
+                audio: wantSysAudio ? {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                } : false,
+                systemAudio: 'include',
+                preferCurrentTab: true,
+                selfBrowserSurface: 'include'
+            });
 
-                // 等待一小段時間確保畫面穩定
-                await new Promise(r => setTimeout(r, 200));
+            const videoTrack = stream.getVideoTracks()[0];
+            isStreamCroppedByBrowser = false;
 
+            // 關鍵技術：使用瀏覽器原生 Region Capture (CropTarget)，直接由底層鎖定模擬框，完全不受外層視窗或分割畫面影響
+            if (window.CropTarget && typeof videoTrack.cropTo === 'function') {
+                try {
+                    const cropTarget = await CropTarget.fromElement(iframeScaleBox);
+                    await videoTrack.cropTo(cropTarget);
+                    isStreamCroppedByBrowser = true;
+                } catch (cropErr) {
+                    console.warn('瀏覽器不支援 CropTarget，改用智慧座標定位:', cropErr);
+                }
+            }
+
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.muted = true;
+            video.playsInline = true;
+            await video.play();
+
+            // 等待視訊串流穩定輸出第一幀
+            await new Promise(r => setTimeout(r, 250));
+
+            videoTrack.addEventListener('ended', () => {
+                sharedCaptureStream = null;
+                sharedCaptureVideo = null;
+                isStreamCroppedByBrowser = false;
+                if (isRecording) stopScreenWallRecording();
+            });
+
+            sharedCaptureStream = stream;
+            sharedCaptureVideo = video;
+            return { stream, video };
+        }
+
+        // 將目前模擬框畫面繪製到指定 Canvas 上
+        function drawSimulatorFrameToCanvas(video, targetCanvas) {
+            const ctx = targetCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            if (isStreamCroppedByBrowser) {
+                // 瀏覽器已經透過 CropTarget 精準裁切出模擬框，直接 1:1 滿版繪製！
+                ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, targetCanvas.width, targetCanvas.height);
+            } else {
+                // 若為舊版不支援 CropTarget 的瀏覽器，計算精準視窗比例裁切
                 const rect = tvOuterWrapper.getBoundingClientRect();
-                const scaleX = video.videoWidth / window.innerWidth;
-                const scaleY = video.videoHeight / window.innerHeight;
-
-                const cropCanvas = document.createElement('canvas');
-                cropCanvas.width = state.resW;
-                cropCanvas.height = state.resH;
-                const ctx = cropCanvas.getContext('2d');
-
+                const scaleX = video.videoWidth / document.documentElement.clientWidth;
+                const scaleY = video.videoHeight / document.documentElement.clientHeight;
                 ctx.drawImage(
                     video,
-                    rect.left * scaleX,
-                    rect.top * scaleY,
-                    rect.width * scaleX,
-                    rect.height * scaleY,
+                    Math.max(0, rect.left * scaleX),
+                    Math.max(0, rect.top * scaleY),
+                    Math.max(1, rect.width * scaleX),
+                    Math.max(1, rect.height * scaleY),
                     0,
                     0,
-                    state.resW,
-                    state.resH
+                    targetCanvas.width,
+                    targetCanvas.height
                 );
-
-                // 停止串流
-                stream.getTracks().forEach(t => t.stop());
-
-                const dataUrl = cropCanvas.toDataURL('image/png');
-                const filename = getFormattedFilename('DisplayWall_Shot', 'png');
-                triggerDownload(dataUrl, filename);
-                showToast('截圖完成！已自動下載', `檔案：${filename}`, 'fa-solid fa-circle-check text-emerald-400', 4000);
-            } catch (err) {
-                showToast('截圖已取消或失敗', '若為外部網址，請允許分享目前分頁以完成模擬區域裁切', 'fa-solid fa-triangle-exclamation text-amber-400', 4000);
-            } finally {
-                btn.disabled = false;
             }
         }
 
         // ==========================================
-        // 功能 2：精準錄製模擬區域畫面 (Video Recording)
+        // 功能 1：一鍵精準截取模擬區域畫面 (Screenshot)
+        // ==========================================
+        async function captureScreenWall() {
+            try {
+                const { video } = await getOrInitCaptureStream(false);
+
+                const outCanvas = document.createElement('canvas');
+                // 限制單邊最高 3840px (4K)，確保高畫質與流暢記憶體使用
+                const maxDim = 3840;
+                let outW = state.resW;
+                let outH = state.resH;
+                if (outW > maxDim || outH > maxDim) {
+                    const ratio = Math.min(maxDim / outW, maxDim / outH);
+                    outW = Math.round(outW * ratio);
+                    outH = Math.round(outH * ratio);
+                }
+                outCanvas.width = outW;
+                outCanvas.height = outH;
+
+                drawSimulatorFrameToCanvas(video, outCanvas);
+
+                outCanvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const filename = getFormattedFilename('DisplayWall_Shot', 'png');
+                    triggerDownload(url, filename);
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    showToast(
+                        '截圖成功！已自動下載至電腦',
+                        `完整擷取 ${state.ratioW}:${state.ratioH} (${outW}×${outH}px) 真實畫面`,
+                        'fa-solid fa-circle-check text-emerald-400',
+                        4000
+                    );
+                }, 'image/png');
+
+            } catch (err) {
+                console.warn('截圖授權取消或失敗:', err);
+                showToast('已取消截圖', '請在瀏覽器彈出視窗點選「共用此分頁」，即可直接截取完整模擬器畫面', 'fa-solid fa-circle-info text-slate-400', 4000);
+            }
+        }
+
+        // ==========================================
+        // 功能 2：精準錄製模擬區域畫面與聲音 (Video + Audio Recording)
         // ==========================================
         let isRecording = false;
         let mediaRecorder = null;
         let recordedChunks = [];
-        let recordingStream = null;
         let recordingAnimFrame = null;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+        let activeMicStream = null;
+        let activeAudioCtx = null;
 
         async function toggleRecording() {
             if (isRecording) {
@@ -1134,26 +1190,10 @@
             const recordBtnText = document.getElementById('recordBtnText');
 
             try {
-                showToast('準備開始錄影...', '請在瀏覽器提示中選擇「此分頁」並點選共用，系統將自動只裁切電視牆區域', 'fa-solid fa-video text-rose-400', 0);
-
-                // 取得當前分頁高畫質串流 (支援 preferCurrentTab 讓使用者一鍵確認)
-                recordingStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: {
-                        displaySurface: 'browser',
-                        frameRate: { ideal: 30, max: 60 }
-                    },
-                    audio: false,
-                    preferCurrentTab: true
-                });
-
-                const sourceVideo = document.createElement('video');
-                sourceVideo.srcObject = recordingStream;
-                sourceVideo.muted = true;
-                await sourceVideo.play();
+                const { stream: displayStream, video: sourceVideo } = await getOrInitCaptureStream(true);
 
                 // 建立只屬於模擬區域比例的離屏 Canvas
                 const recCanvas = document.createElement('canvas');
-                // 為確保流暢度與相容性，若目標寬度超過 3840 則維持等比例縮放至 3840 內錄製
                 const maxRecDim = 3840;
                 let recW = state.resW;
                 let recH = state.resH;
@@ -1162,54 +1202,79 @@
                     recW = Math.round(recW * ratio);
                     recH = Math.round(recH * ratio);
                 }
-                // 確保偶數像素以符合編碼器規範
                 recCanvas.width = recW % 2 === 0 ? recW : recW + 1;
                 recCanvas.height = recH % 2 === 0 ? recH : recH + 1;
-                const ctx = recCanvas.getContext('2d');
 
                 isRecording = true;
                 recordedChunks = [];
                 recordingSeconds = 0;
 
-                // 即時將分頁中的「模擬器外框座標」裁切繪製至錄影專用 Canvas
+                // 即時將已精準鎖定的模擬器畫面繪製至錄影 Canvas
                 function drawFrame() {
                     if (!isRecording) return;
-                    const rect = tvOuterWrapper.getBoundingClientRect();
-                    const scaleX = sourceVideo.videoWidth / window.innerWidth;
-                    const scaleY = sourceVideo.videoHeight / window.innerHeight;
-
-                    ctx.clearRect(0, 0, recCanvas.width, recCanvas.height);
-                    ctx.drawImage(
-                        sourceVideo,
-                        Math.max(0, rect.left * scaleX),
-                        Math.max(0, rect.top * scaleY),
-                        Math.max(1, rect.width * scaleX),
-                        Math.max(1, rect.height * scaleY),
-                        0,
-                        0,
-                        recCanvas.width,
-                        recCanvas.height
-                    );
+                    drawSimulatorFrameToCanvas(sourceVideo, recCanvas);
                     recordingAnimFrame = requestAnimationFrame(drawFrame);
                 }
                 drawFrame();
 
-                // 從裁切後的 Canvas 擷取 30FPS 視訊串流
+                // 從 Canvas 擷取 30FPS 視訊串流
                 const canvasStream = recCanvas.captureStream(30);
+                const finalTracks = [...canvasStream.getVideoTracks()];
 
-                // 選擇最佳影片編碼格式 (優先支援 MP4，其次 WebM)
+                // ==========================================
+                // Web Audio API 多軌混音器 (系統分頁音訊 + 麥克風旁白)
+                // ==========================================
+                const sysAudioTracks = displayStream.getAudioTracks();
+                let hasAnyAudio = false;
+
+                if (sysAudioTracks.length > 0 || recordMicEnabled) {
+                    activeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const destination = activeAudioCtx.createMediaStreamDestination();
+
+                    // 1. 混入網頁分頁內部音訊
+                    if (sysAudioTracks.length > 0) {
+                        const sysSource = activeAudioCtx.createMediaStreamSource(new MediaStream([sysAudioTracks[0]]));
+                        sysSource.connect(destination);
+                        hasAnyAudio = true;
+                    }
+
+                    // 2. 若使用者有開啟麥克風，混入麥克風音訊
+                    if (recordMicEnabled) {
+                        try {
+                            activeMicStream = await navigator.mediaDevices.getUserMedia({
+                                audio: { echoCancellation: true, noiseSuppression: true }
+                            });
+                            if (activeMicStream.getAudioTracks().length > 0) {
+                                const micSource = activeAudioCtx.createMediaStreamSource(activeMicStream);
+                                micSource.connect(destination);
+                                hasAnyAudio = true;
+                            }
+                        } catch (micErr) {
+                            console.warn('無法取得麥克風權限，將僅錄製畫面與系統音訊:', micErr);
+                        }
+                    }
+
+                    if (hasAnyAudio && destination.stream.getAudioTracks().length > 0) {
+                        finalTracks.push(destination.stream.getAudioTracks()[0]);
+                    }
+                }
+
+                const combinedStream = new MediaStream(finalTracks);
+
+                // 選擇最佳影片與音訊編碼格式 (優先支援 MP4，其次 WebM)
                 const mimeTypes = [
-                    'video/mp4;codecs=avc1',
+                    'video/mp4;codecs=avc1,mp4a.40.2',
                     'video/mp4',
-                    'video/webm;codecs=vp9',
-                    'video/webm;codecs=vp8',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
                     'video/webm'
                 ];
                 let selectedMime = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
 
-                mediaRecorder = new MediaRecorder(canvasStream, {
+                mediaRecorder = new MediaRecorder(combinedStream, {
                     mimeType: selectedMime,
-                    videoBitsPerSecond: 8000000 // 8 Mbps 高畫質
+                    videoBitsPerSecond: 8000000, // 8 Mbps 高畫質
+                    audioBitsPerSecond: 192000   // 192 kbps 高音質
                 });
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -1219,6 +1284,16 @@
                 };
 
                 mediaRecorder.onstop = () => {
+                    // 清理麥克風與混音器資源
+                    if (activeMicStream) {
+                        activeMicStream.getTracks().forEach(t => t.stop());
+                        activeMicStream = null;
+                    }
+                    if (activeAudioCtx && activeAudioCtx.state !== 'closed') {
+                        activeAudioCtx.close().catch(() => {});
+                        activeAudioCtx = null;
+                    }
+
                     const ext = selectedMime.includes('mp4') ? 'mp4' : 'webm';
                     const blob = new Blob(recordedChunks, { type: selectedMime || 'video/webm' });
                     const url = URL.createObjectURL(blob);
@@ -1226,13 +1301,8 @@
                     triggerDownload(url, filename);
                     setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-                    showToast('錄影完成！已自動下載至電腦', `檔案：${filename}`, 'fa-solid fa-film text-emerald-400', 5000);
+                    showToast('錄影完成！含音訊影片已下載', `檔案：${filename}`, 'fa-solid fa-film text-emerald-400', 5000);
                 };
-
-                // 若使用者從瀏覽器原生停止共用按鈕中斷，也自動儲存影片
-                recordingStream.getVideoTracks()[0].addEventListener('ended', () => {
-                    if (isRecording) stopScreenWallRecording();
-                });
 
                 mediaRecorder.start(200);
 
@@ -1248,11 +1318,20 @@
                     recordBtnText.textContent = `停止錄影 (${m}:${s})`;
                 }, 1000);
 
-                showToast('正在錄製模擬器畫面...', `僅錄製 ${state.ratioW}:${state.ratioH} 模擬區域，點擊上方「停止錄影」即可下載`, 'fa-solid fa-circle-dot fa-beat text-rose-500', 4000);
+                const audioStatusText = hasAnyAudio
+                    ? (recordMicEnabled ? '（含網頁音訊 + 麥克風）' : '（含網頁音訊）')
+                    : '（目前未勾選分頁音訊，僅錄製畫面）';
+
+                showToast(
+                    `正在錄製模擬器 ${audioStatusText}`,
+                    `僅錄製 ${state.ratioW}:${state.ratioH} 模擬區域，點擊上方「停止錄影」即可下載`,
+                    'fa-solid fa-circle-dot fa-beat text-rose-500',
+                    4500
+                );
 
             } catch (err) {
                 console.warn('錄影啟動取消或失敗:', err);
-                showToast('已取消錄影', '如需錄製動態畫面，請在彈出視窗中允許分享此分頁', 'fa-solid fa-circle-info text-slate-400', 3500);
+                showToast('已取消錄影', '如需錄製動態畫面與聲音，請在彈出視窗中允許分享此分頁並開啟「一併分享分頁音訊」', 'fa-solid fa-circle-info text-slate-400', 3500);
                 resetRecordingUI();
             }
         }
@@ -1264,10 +1343,6 @@
 
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
-            }
-            if (recordingStream) {
-                recordingStream.getTracks().forEach(track => track.stop());
-                recordingStream = null;
             }
             resetRecordingUI();
         }
