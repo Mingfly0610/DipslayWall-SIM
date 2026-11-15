@@ -91,6 +91,9 @@
             margin: 0; 
         }
         input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         /* 強制全局無圓角 (直角設計)，但保留左上角 Logo 圖標的導圓角 */
         *:not(.logo-rounded), *::before, *::after {
             border-radius: 0px !important;
@@ -103,6 +106,23 @@
         .hide-simulator-cursor,
         .hide-simulator-cursor * {
             cursor: none !important;
+        }
+
+        /* F 鍵沉浸式全螢幕模式：隱藏所有工作列與邊框，讓模擬畫面滿版置中 */
+        body.sim-fullscreen-mode > header,
+        body.sim-fullscreen-mode #sidebar,
+        body.sim-fullscreen-mode #stageTopBar,
+        body.sim-fullscreen-mode #stageBottomBar,
+        body.sim-fullscreen-mode #tvTopTag,
+        body.sim-fullscreen-mode #tvChin {
+            display: none !important;
+        }
+        body.sim-fullscreen-mode #stageContainer {
+            padding: 0 !important;
+            background: #000000 !important;
+        }
+        body.sim-fullscreen-mode #tvOuterWrapper {
+            box-shadow: none !important;
         }
     </style>
 </head>
@@ -462,7 +482,7 @@
         <main class="flex-1 flex flex-col bg-slate-950 bg-grid-pattern relative overflow-hidden">
             
             <!-- 舞台上方浮動狀態資訊列 -->
-            <div class="h-11 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex items-center justify-between text-xs z-10 shrink-0">
+            <div id="stageTopBar" class="h-11 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex items-center justify-between text-xs z-10 shrink-0">
                 <div class="flex items-center gap-4 overflow-x-auto py-1">
                     <div class="flex items-center gap-1.5 shrink-0">
                         <span class="text-slate-400">長寬比:</span>
@@ -480,6 +500,9 @@
 
                 <!-- 畫面縮放控制 -->
                 <div class="flex items-center gap-2 shrink-0">
+                    <button id="fullscreenBtn" onclick="toggleSimulatorFullscreen()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition flex items-center gap-1.5" title="進入全螢幕預覽&#10;快捷鍵：F (按 ESC 退出)">
+                        <i class="fa-solid fa-expand"></i> <span>全螢幕</span>
+                    </button>
                     <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium transition" title="自動適應視窗大小&#10;快捷鍵：Alt + F">
                         自動適應視窗
                     </button>
@@ -546,7 +569,7 @@
             </div>
 
             <!-- 底部快捷提示列 -->
-            <div class="h-8 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+            <div id="stageBottomBar" class="h-8 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
                 <div>
                     <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>
                     提示：模擬器會以您設定的「內部實際解析度」渲染網頁，再等比例縮放至您的螢幕，確保排版、字體與 RWD 斷點 100% 貼近真實電視牆。
@@ -737,6 +760,7 @@
             showFrame: true,
             showCenterGuides: false,
             sidebarCollapsed: false,
+            isFullscreen: false,
             // 簡報與媒體檢視狀態
             activeMediaType: 'none', // 'none' | 'pdf' | 'pptx' | 'image' | 'video'
             slideFitMode: 'contain', // 'contain' | 'fill' | 'cover'
@@ -903,7 +927,11 @@
             state.resH = targetH;
 
             let scale = state.manualScale;
-            if (state.fitMode) {
+            if (state.isFullscreen) {
+                const availW = Math.max(200, window.innerWidth);
+                const availH = Math.max(160, window.innerHeight);
+                scale = Math.min(availW / targetW, availH / targetH);
+            } else if (state.fitMode) {
                 const padding = 88;
                 const availW = Math.max(200, stageContainer.clientWidth - padding);
                 const availH = Math.max(160, stageContainer.clientHeight - padding);
@@ -1777,12 +1805,71 @@
         }
 
         // ==========================================
+        // 全螢幕進入與退出控制 (F 鍵進入 / ESC 退出)
+        // ==========================================
+        function enterSimulatorFullscreen() {
+            if (state.isFullscreen) return;
+            state.isFullscreen = true;
+            document.body.classList.add('sim-fullscreen-mode');
+
+            if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+
+            updateSimulatorLayout();
+            showToast('已進入全螢幕預覽模式', '按 ESC 鍵即可退出全螢幕', 'fa-solid fa-expand text-blue-400', 2200);
+        }
+
+        function exitSimulatorFullscreen() {
+            if (!state.isFullscreen && !document.fullscreenElement) return;
+            state.isFullscreen = false;
+            document.body.classList.remove('sim-fullscreen-mode');
+
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+
+            setTimeout(() => updateSimulatorLayout(), 50);
+        }
+
+        function toggleSimulatorFullscreen() {
+            if (state.isFullscreen) {
+                exitSimulatorFullscreen();
+            } else {
+                enterSimulatorFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && state.isFullscreen) {
+                state.isFullscreen = false;
+                document.body.classList.remove('sim-fullscreen-mode');
+                setTimeout(() => updateSimulatorLayout(), 50);
+            }
+        });
+
+        // ==========================================
         // 多功能鍵盤快捷鍵處理
         // ==========================================
         function handleGlobalShortcuts(e) {
             const code = e.code;
-            const activeTag = document.activeElement ? document.activeElement.tagName.toUpperCase() : '';
-            const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA');
+            const activeEl = e.target || document.activeElement;
+            const activeTag = activeEl && activeEl.tagName ? activeEl.tagName.toUpperCase() : '';
+            const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (activeEl && activeEl.isContentEditable));
+
+            // 按下 ESC 退出全螢幕
+            if (code === 'Escape' && state.isFullscreen) {
+                e.preventDefault();
+                exitSimulatorFullscreen();
+                return;
+            }
+
+            // 按下單鍵 F 進入全螢幕 (不在輸入框打字且未按組合鍵時觸發)
+            if (!isTyping && code === 'KeyF' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                enterSimulatorFullscreen();
+                return;
+            }
 
             if (!isTyping && (state.activeMediaType === 'pdf' || state.activeMediaType === 'pptx')) {
                 if (code === 'ArrowRight' || code === 'PageDown') {
