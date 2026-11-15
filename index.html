@@ -80,6 +80,12 @@
         *, *::before, *::after {
             border-radius: 0px !important;
         }
+
+        /* 錄影或截圖期間隱藏模擬區域內的滑鼠游標 */
+        .hide-simulator-cursor,
+        .hide-simulator-cursor * {
+            cursor: none !important;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden select-none">
@@ -319,140 +325,148 @@
                         <span>錄影時收錄網頁內部聲音 (需勾選共用分頁音訊)</span>
                         <input type="checkbox" id="recordSystemAudioToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
                     </div>
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span>截圖/錄影時隱藏滑鼠游標 (避免錄進鼠標)</span>
+                        <input type="checkbox" id="hideCursorOnCaptureToggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Tab 2: 網址 (URL) 與 HTML 原始碼輸入面板 -->
+            <!-- Tab 2: 網址 (URL) 與 HTML 原始碼輸入面板 (預設隱藏) -->
             <div id="panelCode" class="hidden flex-1 flex flex-col px-4 pb-4 overflow-hidden select-text space-y-3">
                 
-                <!-- 方式 A：直接輸入網頁網址 (URL) -->
-                <div class="bg-slate-950/80 p-3.5 border border-slate-800 space-y-2.5 shrink-0">
+                <!-- 方式 A：輸入外部網址或本地伺服器 URL -->
+                <div class="bg-slate-950/80 p-3.5 border border-slate-800 shrink-0 space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold text-sky-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-globe"></i> 方式一：輸入網頁網址 (URL) 預覽
+                            <i class="fa-solid fa-globe"></i> 方式 1：輸入網頁網址 (URL) 預覽
                         </span>
                         <span id="sourceModeBadge" class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             目前來源：HTML 原始碼
                         </span>
                     </div>
-                    <div class="flex gap-1.5">
+                    <div class="flex items-center gap-1.5">
                         <input type="text" id="urlInput" placeholder="https://example.com 或 http://localhost:3000" 
-                            class="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-500 px-3 py-1.5 text-xs font-mono text-white focus:outline-none">
+                            class="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-500 px-3 py-1.5 text-xs font-mono text-slate-100 focus:outline-none">
                         <button onclick="renderURLToIframe()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition shrink-0 flex items-center gap-1">
                             <i class="fa-solid fa-arrow-right-to-bracket"></i> 載入網址
                         </button>
                     </div>
+                    <!-- 快速測試網址範例 -->
                     <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-                        <span>快速測試範例：</span>
-                        <div class="flex gap-1.5">
-                            <button onclick="quickLoadUrl('https://zh.wikipedia.org')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">維基百科</button>
-                            <button onclick="quickLoadUrl('https://example.com')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Example.com</button>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span>快速測試：</span>
+                            <button onclick="quickLoadUrl('https://zh.wikipedia.org')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Wikipedia</button>
+                            <button onclick="quickLoadUrl('https://example.com')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Example.com</button>
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-500 leading-relaxed">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400/80 mr-1"></i>註：部分外部網站（如 Google、YouTube）若設定防嵌入保護 (<code class="text-slate-400">X-Frame-Options</code>)，瀏覽器會拒絕在框內顯示。
+                        <i class="fa-solid fa-circle-exclamation text-amber-400/80 mr-1"></i>若部分網站（如 Google、YouTube）設定了防嵌入保護 (<code class="text-slate-400">X-Frame-Options</code>)，瀏覽器會拒絕在框內顯示，建議測試您自行架設的網站或貼上 HTML 原始碼。
                     </p>
                 </div>
 
-                <!-- 方式 B：直接貼上 HTML 原始碼 -->
-                <div class="flex-1 flex flex-col min-h-0">
-                    <div class="flex items-center justify-between mb-2">
+                <!-- 方式 B：直接貼入 HTML 原始碼 -->
+                <div class="flex-1 flex flex-col min-h-0 bg-slate-950/40 p-3.5 border border-slate-800">
+                    <div class="flex items-center justify-between mb-2 shrink-0">
                         <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-code"></i> 方式二：貼上完整 HTML 原始碼
+                            <i class="fa-solid fa-file-code"></i> 方式 2：貼上 HTML / CSS / JS 原始碼
                         </span>
                         <div class="flex items-center gap-2">
-                            <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                                <input type="checkbox" id="liveUpdateToggle" checked class="bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
-                                <span>即時更新</span>
-                            </label>
-                            <button onclick="clearCode()" class="px-2 py-1 text-xs bg-slate-800 hover:bg-rose-950 hover:text-rose-300 text-slate-400 border border-slate-700 transition">
+                            <button onclick="clearCode()" class="text-xs text-slate-400 hover:text-rose-400 px-2 py-1 bg-slate-800 transition">
                                 <i class="fa-solid fa-trash-can mr-1"></i>清空
+                            </button>
+                            <button onclick="renderHTMLToIframe()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 font-medium transition">
+                                <i class="fa-solid fa-play mr-1"></i>套用原始碼
                             </button>
                         </div>
                     </div>
 
-                    <div class="flex-1 relative border border-slate-700/80 overflow-hidden bg-slate-950 focus-within:border-emerald-500 transition min-h-0">
-                        <textarea id="htmlCodeInput" spellcheck="false" placeholder="請在此貼上您的 <!DOCTYPE html> 完整網頁程式碼，或任何 HTML + CSS + JS 片段..." 
-                            class="w-full h-full bg-transparent p-3 text-xs font-mono text-emerald-300 focus:outline-none resize-none leading-relaxed"></textarea>
-                    </div>
+                    <textarea id="htmlCodeInput" spellcheck="false" placeholder="請在此貼上您的完整 HTML 程式碼 (包含 <style> 與 <script> 皆可支援)..." 
+                        class="flex-1 w-full bg-slate-950 border border-slate-800 focus:border-blue-500 p-3 text-xs font-mono text-emerald-300 leading-relaxed focus:outline-none resize-none"></textarea>
 
-                    <button onclick="renderHTMLToIframe()" class="mt-3 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 shrink-0">
-                        <i class="fa-solid fa-play"></i> 套用並渲染 HTML 原始碼
-                    </button>
+                    <div class="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="liveUpdateToggle" checked class="bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
+                            <span>貼上或修改時自動即時更新</span>
+                        </label>
+                        <span>支援 RWD / Tailwind / 外部 CDN</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- 面板右側邊緣快速收合/展開按鈕 -->
-            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center z-30 transition shadow-lg" title="收合 / 展開左側面板">
+            <!-- 側邊欄右緣快速收合/展開耳朵按鈕 -->
+            <button id="edgeCollapseBtn" onclick="toggleSidebar()" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-l-0 border-slate-700 flex items-center justify-center z-30 transition shadow-md" title="收合/展開左側視窗">
                 <i id="edgeCollapseIcon" class="fa-solid fa-chevron-left text-xs"></i>
             </button>
+
         </aside>
 
-        <!-- 右側電視牆模擬主畫布 -->
+        <!-- 右側：電視牆即時預覽舞台 -->
         <main class="flex-1 flex flex-col bg-slate-950 bg-grid-pattern relative overflow-hidden">
             
-            <!-- 畫布頂部即時數據資訊列 -->
-            <div class="h-12 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex flex-wrap items-center justify-between gap-2 z-10">
-                <div class="flex items-center space-x-3 sm:space-x-5 text-xs">
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-slate-400">目標比例:</span>
+            <!-- 舞台上方浮動狀態資訊列 -->
+            <div class="h-11 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex items-center justify-between text-xs z-10 shrink-0">
+                <div class="flex items-center gap-4 overflow-x-auto py-1">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400">長寬比:</span>
                         <span id="infoRatio" class="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 border border-blue-500/20">16 : 9</span>
                     </div>
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1.5 shrink-0">
                         <span class="text-slate-400">內部實際解析度:</span>
-                        <span id="infoResolution" class="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20">1920 × 1080 px</span>
+                        <span id="infoResolution" class="font-mono font-bold text-white">1920 × 1080 px</span>
                     </div>
-                    <div class="hidden xl:flex items-center gap-1.5">
-                        <span class="text-slate-400">單塊面板尺寸:</span>
+                    <div class="hidden lg:flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400">單塊螢幕解析度:</span>
                         <span id="infoPanelRes" class="font-mono text-slate-300">1920 × 1080 px</span>
                     </div>
                 </div>
 
                 <!-- 畫面縮放控制 -->
-                <div class="flex items-center space-x-3 text-xs">
-                    <div class="flex items-center gap-2 bg-slate-950 px-2.5 py-1 border border-slate-800">
-                        <span class="text-slate-400">預覽縮放:</span>
-                        <span id="infoScale" class="font-mono font-bold text-amber-400 w-11 text-right">50%</span>
-                        <input type="range" id="manualScaleSlider" min="10" max="150" value="50" class="w-20 sm:w-24 accent-blue-500 cursor-pointer">
-                    </div>
-                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white font-medium hover:bg-blue-500 transition flex items-center gap-1">
-                        <i class="fa-solid fa-compress"></i> 自動適應視窗
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="fitScreenBtn" onclick="setFitMode(true)" class="px-2.5 py-1 bg-blue-600 text-white text-xs font-medium transition">
+                        自動適應視窗
                     </button>
+                    <div class="flex items-center bg-slate-800 px-2 py-1 border border-slate-700 gap-2">
+                        <span class="text-[11px] text-slate-400">縮放:</span>
+                        <input type="range" id="manualScaleSlider" min="10" max="150" value="50" class="w-20 accent-blue-500 cursor-pointer">
+                        <span id="infoScale" class="font-mono text-xs text-amber-400 w-10 text-right">50%</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- 模擬器核心置中舞台 -->
-            <div id="stageContainer" class="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-auto relative">
+            <!-- 舞台中央預覽容器 -->
+            <div id="stageContainer" class="flex-1 overflow-auto flex items-center justify-center p-6 sm:p-10 relative">
                 
-                <!-- 電視牆外框包裝器 (依縮放後的視覺寬高呈現) -->
-                <div id="tvOuterWrapper" class="relative transition-all duration-150 ease-out tv-bezel-shadow bg-black">
+                <!-- 電視牆外框包裝器 (依計算後的視覺大小顯示) -->
+                <div id="tvOuterWrapper" class="relative transition-all duration-150 ease-out tv-bezel-shadow bg-black" style="width: 960px; height: 540px;">
                     
-                    <!-- 頂部懸浮尺寸標籤 -->
+                    <!-- 頂部環境狀態小標籤 -->
                     <div id="tvTopTag" class="absolute -top-7 left-0 flex items-center gap-2 text-[11px] font-mono text-slate-400 whitespace-nowrap">
-                        <i class="fa-solid fa-display text-blue-400"></i>
-                        <span id="tvTopTagText">16:9 | 1920 × 1080 px</span>
+                        <span class="w-2 h-2 bg-emerald-400 animate-pulse"></span>
+                        <span id="tvTopTagText">16:9 | 1920×1080px</span>
                     </div>
 
-                    <!-- 縮放內部容器 (具有真實目標解析度 width/height，並透過 transform: scale 縮放) -->
-                    <div id="iframeScaleBox" class="origin-top-left relative overflow-hidden bg-slate-950">
-                        <!-- 實際渲染使用者 HTML 的沙盒 Iframe -->
-                        <iframe id="previewIframe" class="w-full h-full border-0 block bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+                    <!-- 內部等比例縮放盒：寬高固定為真實目標解析度 (如 1920x1080)，再透過 CSS transform scale 縮放 -->
+                    <div id="iframeScaleBox" class="origin-top-left overflow-hidden relative bg-slate-900" style="width: 1920px; height: 1080px; transform: scale(0.5);">
+                        
+                        <!-- 實際渲染使用者 HTML 的 Iframe -->
+                        <iframe id="previewIframe" title="Screen Wall Preview" class="w-full h-full border-0 block bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
 
-                        <!-- 電視牆拼接網格覆蓋層 (Bezel Grid Overlay) -->
-                        <div id="bezelOverlay" class=" pointer-events-none absolute inset-0 z-10"></div>
+                        <!-- 電視牆拼接網格遮罩層 (模擬多螢幕拼接黑邊) -->
+                        <div id="bezelOverlay" class="pointer-events-none absolute inset-0 z-10"></div>
 
-                        <!-- 中心十字對齊輔助線 -->
-                        <div id="centerGuidesOverlay" class="hidden pointer-events-none absolute inset-0 z-20">
-                            <div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-cyan-400/60 border-r border-dashed border-white/50"></div>
-                            <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-cyan-400/60 border-b border-dashed border-white/50"></div>
+                        <!-- 中心十字對齊輔助線 (選填開啟) -->
+                        <div id="centerGuidesOverlay" class="pointer-events-none absolute inset-0 z-20 hidden">
+                            <div class="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-rose-500/60 border-r border-dashed border-white/50"></div>
+                            <div class="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-rose-500/60 border-b border-dashed border-white/50"></div>
                         </div>
                     </div>
 
-                    <!-- 擬真電視底部金屬下巴與指示燈 -->
-                    <div id="tvChin" class="absolute -bottom-3 inset-x-0 h-3 bg-gradient-to-b from-slate-700 to-slate-900 border-t border-slate-600 flex items-center justify-center">
-                        <div class="w-8 h-0.5 bg-slate-400/40"></div>
-                        <div class="w-1.5 h-1.5 bg-emerald-400 absolute right-3 shadow-[0_0_6px_#34d399]"></div>
+                    <!-- 模擬電視底座指示燈與飾條 -->
+                    <div id="tvChin" class="absolute -bottom-3 inset-x-0 h-3 bg-gradient-to-b from-slate-800 to-slate-900 border-x border-b border-slate-700 flex items-center justify-center">
+                        <div class="w-8 h-0.5 bg-slate-600"></div>
+                        <div class="w-1.5 h-1.5 bg-emerald-400 shadow-[0_0_6px_#34d399] absolute right-4"></div>
                     </div>
                 </div>
 
@@ -993,6 +1007,32 @@
         let isStreamCroppedByBrowser = false;
         let recordMicEnabled = false;
 
+        // 動態控制模擬器外框與內部 Iframe 的滑鼠游標顯示/隱藏
+        function setSimulatorCursorHidden(hide) {
+            const shouldHide = hide && (document.getElementById('hideCursorOnCaptureToggle')?.checked ?? true);
+            tvOuterWrapper.classList.toggle('hide-simulator-cursor', shouldHide);
+
+            // 若內部為同源 HTML (srcdoc)，同步注入或移除 iframe 內部的 cursor: none 樣式
+            try {
+                const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow?.document;
+                if (iframeDoc && iframeDoc.head) {
+                    let styleEl = iframeDoc.getElementById('__sim_hide_cursor_style');
+                    if (shouldHide) {
+                        if (!styleEl) {
+                            styleEl = iframeDoc.createElement('style');
+                            styleEl.id = '__sim_hide_cursor_style';
+                            styleEl.textContent = '*, *::before, *::after, html, body { cursor: none !important; }';
+                            iframeDoc.head.appendChild(styleEl);
+                        }
+                    } else if (styleEl) {
+                        styleEl.remove();
+                    }
+                }
+            } catch (e) {
+                // 外部跨網域 URL 受同源政策保護時，由外層容器與系統參數負責隱藏
+            }
+        }
+
         // 切換是否同步錄製麥克風聲音
         function toggleMicOption() {
             recordMicEnabled = !recordMicEnabled;
@@ -1016,6 +1056,7 @@
         // 取得或重用目前的畫面擷取串流（授權一次即可重複瞬間截圖與錄影）
         async function getOrInitCaptureStream(requireAudio = false) {
             const wantSysAudio = document.getElementById('recordSystemAudioToggle')?.checked ?? true;
+            const hideCursor = document.getElementById('hideCursorOnCaptureToggle')?.checked ?? true;
 
             if (sharedCaptureStream && sharedCaptureStream.active) {
                 const videoTrack = sharedCaptureStream.getVideoTracks()[0];
@@ -1023,6 +1064,11 @@
 
                 // 若之前只點了截圖(未開音訊)，而現在要錄影且需要系統音訊，則不重用舊串流並重新請求帶音訊授權
                 if (videoTrack && videoTrack.readyState === 'live' && (!requireAudio || !wantSysAudio || hasAudioTrack)) {
+                    // 嘗試動態套用游標隱藏約束
+                    try {
+                        await videoTrack.applyConstraints({ cursor: hideCursor ? 'never' : 'always' });
+                    } catch (e) {}
+
                     // 確保每次截圖前重新對準模擬框元素
                     if (window.CropTarget && typeof videoTrack.cropTo === 'function') {
                         try {
@@ -1047,7 +1093,8 @@
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
                     displaySurface: 'browser',
-                    frameRate: { ideal: 30, max: 60 }
+                    frameRate: { ideal: 30, max: 60 },
+                    cursor: hideCursor ? 'never' : 'always'
                 },
                 audio: wantSysAudio ? {
                     echoCancellation: false,
@@ -1127,7 +1174,10 @@
         // ==========================================
         async function captureScreenWall() {
             try {
+                setSimulatorCursorHidden(true);
                 const { video } = await getOrInitCaptureStream(false);
+                // 等待一幀確保游標已完全隱藏
+                await new Promise(r => requestAnimationFrame(r));
 
                 const outCanvas = document.createElement('canvas');
                 // 限制單邊最高 3840px (4K)，確保高畫質與流暢記憶體使用
@@ -1143,6 +1193,7 @@
                 outCanvas.height = outH;
 
                 drawSimulatorFrameToCanvas(video, outCanvas);
+                if (!isRecording) setSimulatorCursorHidden(false);
 
                 outCanvas.toBlob((blob) => {
                     if (!blob) return;
@@ -1159,6 +1210,7 @@
                 }, 'image/png');
 
             } catch (err) {
+                if (!isRecording) setSimulatorCursorHidden(false);
                 console.warn('截圖授權取消或失敗:', err);
                 showToast('已取消截圖', '請在瀏覽器彈出視窗點選「共用此分頁」，即可直接截取完整模擬器畫面', 'fa-solid fa-circle-info text-slate-400', 4000);
             }
@@ -1191,6 +1243,7 @@
 
             try {
                 const { stream: displayStream, video: sourceVideo } = await getOrInitCaptureStream(true);
+                setSimulatorCursorHidden(true);
 
                 // 建立只屬於模擬區域比例的離屏 Canvas
                 const recCanvas = document.createElement('canvas');
@@ -1338,6 +1391,7 @@
 
         function stopScreenWallRecording() {
             isRecording = false;
+            setSimulatorCursorHidden(false);
             if (recordingAnimFrame) cancelAnimationFrame(recordingAnimFrame);
             if (recordingTimerInterval) clearInterval(recordingTimerInterval);
 
@@ -1348,6 +1402,7 @@
         }
 
         function resetRecordingUI() {
+            setSimulatorCursorHidden(false);
             const recordBtn = document.getElementById('recordBtn');
             const recordBtnIcon = document.getElementById('recordBtnIcon');
             const recordBtnText = document.getElementById('recordBtnText');
@@ -1398,6 +1453,19 @@
 
             document.getElementById('showCenterGuides').addEventListener('change', (e) => {
                 centerGuidesOverlay.classList.toggle('hidden', !e.target.checked);
+            });
+
+            document.getElementById('hideCursorOnCaptureToggle').addEventListener('change', () => {
+                if (isRecording) {
+                    setSimulatorCursorHidden(true);
+                }
+            });
+
+            // 當 Iframe 重新載入內容時，若正在錄影則自動套用隱藏游標
+            previewIframe.addEventListener('load', () => {
+                if (isRecording) {
+                    setSimulatorCursorHidden(true);
+                }
             });
 
             // 程式碼編輯器即時更新 (加入 Debounce 避免頻繁重繪)
