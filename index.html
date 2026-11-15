@@ -3,11 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DisplayWall Sim - 多尺寸螢幕與電視牆網頁模擬器</title>
+    <title>DisplayWall Sim</title>
+    <meta name="description" content="專為網頁設計師、前端工程師與展場策展人打造的多尺寸螢幕與拼接電視牆模擬器。支援 HTML、URL 網址、PDF 與 PPTX 簡報即時等比例預覽、拼縫黑邊檢查、無痕截圖與音訊錄影。">
+
+    <!-- Open Graph / Facebook / LINE / LinkedIn 社群分享預覽設定 -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="DisplayWall Sim｜多尺寸螢幕與電視牆網頁/簡報模擬器">
+    <meta property="og:description" content="想知道你的網頁或 PPT 簡報在 32:9 超寬螢幕、9:16 電子看板或 4x3 拼接電視牆上長什麼樣子？貼上網址或匯入檔案，立即 1:1 真實解析度模擬，還支援無游標錄影與一鍵截圖！">
+    <meta property="og:image" content="og-cover-1200x630.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter / X Card 設定 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DisplayWall Sim｜多尺寸螢幕與電視牆網頁/簡報模擬器">
+    <meta name="twitter:description" content="支援 HTML、URL、PDF、PPTX 多尺寸電視牆即時模擬、拼縫黑邊檢查、一鍵截圖與含音訊錄影。">
+    <meta name="twitter:image" content="og-cover-1200x630.png">
+
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts: Inter 與 Noto Sans TC -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- 引入 FontAwesome 圖示庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 html2canvas 供高品質 DOM 截圖與 Canvas 錄製輔助 -->
@@ -131,8 +148,11 @@
                 <i id="toggleSidebarIcon" class="fa-solid fa-bars-staggered text-blue-400"></i>
                 <span id="toggleSidebarText" class="hidden md:inline">收合左側面板</span>
             </button>
+            <button onclick="openSocialKitModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="開啟社群分享縮圖產生器與宣傳文案">
+                <i class="fa-solid fa-share-nodes text-sky-400"></i> <span class="hidden lg:inline">社群分享素材</span>
+            </button>
             <button id="loadDemoBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="載入範例儀表板程式碼">
-                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden lg:inline">載入智慧城市範例</span>
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden xl:inline">載入智慧城市範例</span>
             </button>
             <label for="fileUpload" class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20" title="支援匯入 .html, .pdf, .pptx, .png, .jpg, .mp4">
                 <i class="fa-solid fa-folder-open"></i> <span class="hidden sm:inline">匯入檔案 (HTML / PDF / PPT)</span>
@@ -147,6 +167,100 @@
         <div>
             <div id="captureToastTitle" class="font-bold text-white">處理中...</div>
             <div id="captureToastDesc" class="text-xs text-slate-400 mt-0.5">正在準備擷取模擬區域畫面</div>
+        </div>
+    </div>
+
+    <!-- 社群分享縮圖 (1200x630 OG Image) 與推廣文案中心 Modal -->
+    <div id="socialKitModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-text">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Modal 頂部標題 -->
+            <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-share-nodes text-sky-400 text-lg"></i>
+                    <h2 class="font-bold text-base text-white">社群分享縮圖 (OG Image) 與推廣文案中心</h2>
+                </div>
+                <button onclick="closeSocialKitModal()" class="w-8 h-8 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal 內容區 -->
+            <div class="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- 左欄：1200x630 標準社群縮圖預覽與下載 -->
+                <div class="lg:col-span-7 flex flex-col space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-image"></i> 1. 社群分享預覽縮圖 (1200 × 630 px 標準比例)
+                        </span>
+                        <button onclick="downloadOgThumbnail()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg">
+                            <i class="fa-solid fa-download"></i> 下載高畫質縮圖 (PNG)
+                        </button>
+                    </div>
+
+                    <!-- Canvas 繪製的 1200x630 縮圖即時預覽 -->
+                    <div class="bg-slate-950 p-2 border border-slate-800 flex items-center justify-center">
+                        <canvas id="ogThumbCanvas" width="1200" height="630" class="w-full h-auto border border-slate-700 shadow-lg"></canvas>
+                    </div>
+
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i>
+                        用途說明：您可以直接下載此張 <code class="text-slate-200">1200×630</code> 縮圖作為社群貼文配圖，或將其命名為 <code class="text-slate-200">og-cover-1200x630.png</code> 放在網站同目錄下，分享連結至 LINE / FB / Discord 時即會自動顯示此縮圖！
+                    </p>
+                </div>
+
+                <!-- 右欄：多情境社群分享文案 (一鍵複製) -->
+                <div class="lg:col-span-5 flex flex-col space-y-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> 2. 社群貼文與連結分享文字 (點擊一鍵複製)
+                    </span>
+
+                    <!-- 文案 1：萬用主打版 -->
+                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-white">🔥 專業主打版（適合 FB / LinkedIn / 作品集）</span>
+                            <button onclick="copyShareText('shareText1')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> 複製文字
+                            </button>
+                        </div>
+                        <textarea id="shareText1" readonly class="w-full h-28 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">🖥️ 想知道你設計的網頁、戰情室儀表板或 PPT/PDF 簡報，在「32:9 超寬螢幕」、「9:16 直立看板」或「4×3 拼接電視牆」上實際長什麼樣子嗎？
+
+我們打造了【DisplayWall Sim 多尺寸螢幕與電視牆模擬器】！
+✨ 支援 3 大來源：貼上 HTML 原始碼、輸入網址 (URL)、或上傳 PDF / PPTX 簡報
+📐 真實解析度渲染：自由輸入長寬比與 4K 解析度，精準觸發 RWD 斷點
+🔲 電視牆拼縫模擬：可開啟 2×2、3×1 等拼接黑邊，檢查關鍵標題是否被切到
+🎬 提案展示神器：內建無游標光學截圖 & 含網頁音效/麥克風混音錄影，一鍵下載！
+
+立即線上體驗測試 👇</textarea>
+                    </div>
+
+                    <!-- 文案 2：策展與簡報提案版 -->
+                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-white">📊 展場活動 / 簡報提案版（適合給客戶與企劃）</span>
+                            <button onclick="copyShareText('shareText2')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> 複製文字
+                            </button>
+                        </div>
+                        <textarea id="shareText2" readonly class="w-full h-24 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">去活動現場彩排前，還在擔心簡報或視覺畫面在特殊比例的 LED 電視牆上變形、留黑邊，或是重要大字剛好卡在螢幕接縫上嗎？
+
+直接把你的 PDF、PPTX 或網頁丟進【DisplayWall Sim 電視牆模擬器】！一秒切換「完整留黑邊 / 強制拉伸滿版 / 裁切填滿」，還能直接截圖或錄成展示影片給客戶確認！</textarea>
+                    </div>
+
+                    <!-- 文案 3：LINE / Threads 短版 -->
+                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-white">⚡ 極簡短版（適合 LINE 群組 / Threads / IG）</span>
+                            <button onclick="copyShareText('shareText3')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> 複製文字
+                            </button>
+                        </div>
+                        <textarea id="shareText3" readonly class="w-full h-20 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">超實用的【多尺寸螢幕與電視牆模擬器】⚡
+不管你是寫 HTML 網頁、測線上網址，還是放活動 PPT / PDF 簡報，輸入任何螢幕比例（16:9 / 32:9 / 9:16 / 拼接電視牆）就能立即預覽真實效果，還支援快捷鍵一鍵無痕截圖與錄影！</textarea>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -1820,6 +1934,203 @@
             recordBtn.className = "px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition";
             recordBtnIcon.className = "fa-solid fa-video";
             recordBtnText.textContent = "開始錄影";
+        }
+
+        // ==========================================
+        // 社群分享縮圖 (1200x630 OG Image) 自動繪製與文案複製
+        // ==========================================
+        function openSocialKitModal() {
+            document.getElementById('socialKitModal').classList.remove('hidden');
+            drawOgThumbnailCanvas();
+        }
+
+        function closeSocialKitModal() {
+            document.getElementById('socialKitModal').classList.add('hidden');
+        }
+
+        function drawOgThumbnailCanvas() {
+            const canvas = document.getElementById('ogThumbCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = 1200, H = 630;
+
+            // 1. 深色科技感漸層背景
+            const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+            bgGrad.addColorStop(0, '#070b14');
+            bgGrad.addColorStop(0.5, '#0f172a');
+            bgGrad.addColorStop(1, '#091024');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. 繪製背景科技網格線
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < W; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            }
+            for (let y = 0; y < H; y += 40) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            }
+
+            // 3. 頂部與底部裝飾光條
+            const barGrad = ctx.createLinearGradient(0, 0, W, 0);
+            barGrad.addColorStop(0, '#3b82f6');
+            barGrad.addColorStop(0.5, '#06b6d4');
+            barGrad.addColorStop(1, '#6366f1');
+            ctx.fillStyle = barGrad;
+            ctx.fillRect(0, 0, W, 8);
+            ctx.fillRect(0, H - 6, W, 6);
+
+            // 4. 左側主視覺文案區
+            // 品牌徽章
+            ctx.fillStyle = 'rgba(37, 99, 235, 0.2)';
+            ctx.fillRect(68, 72, 260, 38);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(68, 72, 260, 38);
+
+            ctx.fillStyle = '#60a5fa';
+            ctx.font = 'bold 18px "JetBrains Mono", monospace';
+            ctx.fillText('DISPLAYWALL SIMULATOR', 84, 97);
+
+            // 主標題
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 54px "Noto Sans TC", sans-serif';
+            ctx.fillText('多尺寸螢幕與電視牆', 68, 185);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '900 54px "Noto Sans TC", sans-serif';
+            ctx.fillText('網頁 / 簡報模擬器', 68, 255);
+
+            // 副標題說明
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '500 22px "Noto Sans TC", sans-serif';
+            ctx.fillText('貼上 HTML、網址或匯入 PDF / PPTX 簡報', 68, 315);
+            ctx.fillText('1:1 真實解析度模擬各比例螢幕與拼接電視牆', 68, 350);
+
+            // 特色標籤矩陣
+            const tags = [
+                { text: '16:9 / 32:9 / 9:16 自由比例', color: '#3b82f6' },
+                { text: '電視牆拼縫黑邊檢查', color: '#6366f1' },
+                { text: 'PDF & PPTX 縮放模擬', color: '#f59e0b' },
+                { text: '無痕截圖 & 音訊錄影', color: '#10b981' }
+            ];
+            tags.forEach((t, i) => {
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                const tx = 68 + col * 275;
+                const ty = 400 + row * 62;
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillRect(tx, ty, 258, 46);
+                ctx.strokeStyle = t.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(tx, ty, 258, 46);
+
+                ctx.fillStyle = t.color;
+                ctx.fillRect(tx, ty, 6, 46);
+
+                ctx.fillStyle = '#f1f5f9';
+                ctx.font = 'bold 17px "Noto Sans TC", sans-serif';
+                ctx.fillText(t.text, tx + 18, ty + 29);
+            });
+
+            // 5. 右側：擬真多尺寸電視牆示意圖組 (32:9 超寬拼接牆 + 2x2 矩陣牆 + 9:16 直立看板)
+            // (A) 上方：32:9 雙聯屏超寬電視牆 (2x1)
+            const w1X = 640, w1Y = 85, w1W = 490, w1H = 145;
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(w1X, w1Y, w1W, w1H);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(w1X, w1Y, w1W, w1H);
+
+            // 內部漸層與 2x1 拼縫線
+            const scrGrad1 = ctx.createLinearGradient(w1X, w1Y, w1X + w1W, w1Y + w1H);
+            scrGrad1.addColorStop(0, 'rgba(14, 165, 233, 0.25)');
+            scrGrad1.addColorStop(1, 'rgba(99, 102, 241, 0.25)');
+            ctx.fillStyle = scrGrad1;
+            ctx.fillRect(w1X + 4, w1Y + 4, w1W - 8, w1H - 8);
+
+            // 拼縫黑線
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(w1X + w1W / 2 - 2, w1Y, 4, w1H);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 22px "JetBrains Mono", monospace';
+            ctx.fillText('32 : 9 ULTRA-WIDE (3840×1080)', w1X + 65, w1Y + 75);
+            ctx.fillStyle = '#7dd3fc';
+            ctx.font = '15px "Noto Sans TC", sans-serif';
+            ctx.fillText('2×1 雙聯屏迎賓橫幅電視牆模式', w1X + 140, w1Y + 105);
+
+            // (B) 左下：2x2 矩陣拼接電視牆 (16:9)
+            const w2X = 640, w2Y = 265, w2W = 330, w2H = 260;
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(w2X, w2Y, w2W, w2H);
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(w2X, w2Y, w2W, w2H);
+
+            const scrGrad2 = ctx.createLinearGradient(w2X, w2Y, w2X + w2W, w2Y + w2H);
+            scrGrad2.addColorStop(0, 'rgba(79, 70, 229, 0.28)');
+            scrGrad2.addColorStop(1, 'rgba(16, 185, 129, 0.22)');
+            ctx.fillStyle = scrGrad2;
+            ctx.fillRect(w2X + 4, w2Y + 4, w2W - 8, w2H - 8);
+
+            // 2x2 十字拼縫黑線
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(w2X + w2W / 2 - 2, w2Y, 4, w2H);
+            ctx.fillRect(w2X, w2Y + w2H / 2 - 2, w2W, 4);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 22px "JetBrains Mono", monospace';
+            ctx.fillText('16 : 9 MATRIX (4K)', w2X + 55, w2Y + 120);
+            ctx.fillStyle = '#c7d2fe';
+            ctx.font = '15px "Noto Sans TC", sans-serif';
+            ctx.fillText('2×2 戰情室拼接電視牆', w2X + 88, w2Y + 155);
+
+            // (C) 右下：9:16 直立式數位看板 (Kiosk)
+            const w3X = 995, w3Y = 265, w3W = 135, w3H = 260;
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(w3X, w3Y, w3W, w3H);
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(w3X, w3Y, w3W, w3H);
+
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
+            ctx.fillRect(w3X + 4, w3Y + 4, w3W - 8, w3H - 8);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px "JetBrains Mono", monospace';
+            ctx.fillText('9 : 16', w3X + 38, w3Y + 115);
+            ctx.fillStyle = '#6ee7b7';
+            ctx.font = '14px "Noto Sans TC", sans-serif';
+            ctx.fillText('直立電子看板', w3X + 25, w3Y + 145);
+            ctx.fillText('1080×1920', w3X + 28, w3Y + 170);
+
+            // 底部版權與網址標示
+            ctx.fillStyle = '#64748b';
+            ctx.font = '15px "JetBrains Mono", monospace';
+            ctx.fillText('HTML · URL · PDF · PPTX | Real-Time Viewport Scaling & Screen Wall Simulator', 68, 585);
+        }
+
+        function downloadOgThumbnail() {
+            drawOgThumbnailCanvas();
+            const canvas = document.getElementById('ogThumbCanvas');
+            canvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                triggerDownload(url, 'og-cover-1200x630.png');
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast('社群縮圖已下載！', '尺寸為 1200×630 px，可直接用於貼文配圖或網站 OG 預覽圖', 'fa-solid fa-image text-emerald-400', 4000);
+            }, 'image/png');
+        }
+
+        function copyShareText(textareaId) {
+            const el = document.getElementById(textareaId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                showToast('推廣文字已複製到剪貼簿！', '您現在可以直接貼上至 LINE、Facebook、Threads 或 LinkedIn', 'fa-solid fa-check text-emerald-400', 3000);
+            });
         }
 
         // ==========================================
