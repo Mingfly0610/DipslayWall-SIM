@@ -3,23 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 網頁與社群分享標題：純顯示 DisplayWall Sim，清空小字描述避免爬蟲抓到網頁內文 -->
     <title>DisplayWall Sim</title>
-    <meta name="description" content="專為網頁設計師、前端工程師與展場策展人打造的多尺寸螢幕與拼接電視牆模擬器。支援 HTML、URL 網址、PDF 與 PPTX 簡報即時等比例預覽、拼縫黑邊檢查、無痕截圖與音訊錄影。">
-
-    <!-- Open Graph / Facebook / LINE / LinkedIn 社群分享預覽設定 -->
+    <meta name="description" content=" ">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="DisplayWall Sim｜多尺寸螢幕與電視牆網頁/簡報模擬器">
-    <meta property="og:description" content="想知道你的網頁或 PPT 簡報在 32:9 超寬螢幕、9:16 電子看板或 4x3 拼接電視牆上長什麼樣子？貼上網址或匯入檔案，立即 1:1 真實解析度模擬，還支援無游標錄影與一鍵截圖！">
-    <meta property="og:image" content="og-cover-1200x630.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:locale" content="zh_TW">
-
-    <!-- Twitter / X Card 設定 -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DisplayWall Sim｜多尺寸螢幕與電視牆網頁/簡報模擬器">
-    <meta name="twitter:description" content="支援 HTML、URL、PDF、PPTX 多尺寸電視牆即時模擬、拼縫黑邊檢查、一鍵截圖與含音訊錄影。">
-    <meta name="twitter:image" content="og-cover-1200x630.png">
+    <meta property="og:site_name" content="DisplayWall Sim">
+    <meta property="og:title" content="DisplayWall Sim">
+    <meta property="og:description" content=" ">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="DisplayWall Sim">
+    <meta name="twitter:description" content=" ">
 
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -148,11 +142,8 @@
                 <i id="toggleSidebarIcon" class="fa-solid fa-bars-staggered text-blue-400"></i>
                 <span id="toggleSidebarText" class="hidden md:inline">收合左側面板</span>
             </button>
-            <button onclick="openSocialKitModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="開啟社群分享縮圖產生器與宣傳文案">
-                <i class="fa-solid fa-share-nodes text-sky-400"></i> <span class="hidden lg:inline">社群分享素材</span>
-            </button>
             <button id="loadDemoBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm flex items-center gap-1.5 transition border border-slate-700" title="載入範例儀表板程式碼">
-                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden xl:inline">載入智慧城市範例</span>
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span class="hidden lg:inline">載入智慧城市範例</span>
             </button>
             <label for="fileUpload" class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20" title="支援匯入 .html, .pdf, .pptx, .png, .jpg, .mp4">
                 <i class="fa-solid fa-folder-open"></i> <span class="hidden sm:inline">匯入檔案 (HTML / PDF / PPT)</span>
@@ -161,106 +152,12 @@
         </div>
     </header>
 
-    <!-- 截圖與錄影狀態提示通知 (Toast) -->
-    <div id="captureToast" class="hidden fixed bottom-12 right-6 z-50 bg-slate-900 border border-blue-500 text-slate-100 px-4 py-3 shadow-2xl flex items-center gap-3 text-xs sm:text-sm">
+    <!-- 截圖與錄影狀態提示通知 (預設不填文字，避免社群爬蟲抓成預覽小字) -->
+    <div id="captureToast" data-nosnippet class="hidden fixed bottom-12 right-6 z-50 bg-slate-900 border border-blue-500 text-slate-100 px-4 py-3 shadow-2xl flex items-center gap-3 text-xs sm:text-sm">
         <i id="captureToastIcon" class="fa-solid fa-spinner fa-spin text-blue-400 text-base"></i>
         <div>
-            <div id="captureToastTitle" class="font-bold text-white">處理中...</div>
-            <div id="captureToastDesc" class="text-xs text-slate-400 mt-0.5">正在準備擷取模擬區域畫面</div>
-        </div>
-    </div>
-
-    <!-- 社群分享縮圖 (1200x630 OG Image) 與推廣文案中心 Modal -->
-    <div id="socialKitModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-text">
-        <div class="bg-slate-900 border border-slate-700 w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <!-- Modal 頂部標題 -->
-            <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-share-nodes text-sky-400 text-lg"></i>
-                    <h2 class="font-bold text-base text-white">社群分享縮圖 (OG Image) 與推廣文案中心</h2>
-                </div>
-                <button onclick="closeSocialKitModal()" class="w-8 h-8 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Modal 內容區 -->
-            <div class="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                <!-- 左欄：1200x630 標準社群縮圖預覽與下載 -->
-                <div class="lg:col-span-7 flex flex-col space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-image"></i> 1. 社群分享預覽縮圖 (1200 × 630 px 標準比例)
-                        </span>
-                        <button onclick="downloadOgThumbnail()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg">
-                            <i class="fa-solid fa-download"></i> 下載高畫質縮圖 (PNG)
-                        </button>
-                    </div>
-
-                    <!-- Canvas 繪製的 1200x630 縮圖即時預覽 -->
-                    <div class="bg-slate-950 p-2 border border-slate-800 flex items-center justify-center">
-                        <canvas id="ogThumbCanvas" width="1200" height="630" class="w-full h-auto border border-slate-700 shadow-lg"></canvas>
-                    </div>
-
-                    <p class="text-xs text-slate-400 leading-relaxed">
-                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i>
-                        用途說明：您可以直接下載此張 <code class="text-slate-200">1200×630</code> 縮圖作為社群貼文配圖，或將其命名為 <code class="text-slate-200">og-cover-1200x630.png</code> 放在網站同目錄下，分享連結至 LINE / FB / Discord 時即會自動顯示此縮圖！
-                    </p>
-                </div>
-
-                <!-- 右欄：多情境社群分享文案 (一鍵複製) -->
-                <div class="lg:col-span-5 flex flex-col space-y-3">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-copy"></i> 2. 社群貼文與連結分享文字 (點擊一鍵複製)
-                    </span>
-
-                    <!-- 文案 1：萬用主打版 -->
-                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-white">🔥 專業主打版（適合 FB / LinkedIn / 作品集）</span>
-                            <button onclick="copyShareText('shareText1')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
-                                <i class="fa-regular fa-copy"></i> 複製文字
-                            </button>
-                        </div>
-                        <textarea id="shareText1" readonly class="w-full h-28 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">🖥️ 想知道你設計的網頁、戰情室儀表板或 PPT/PDF 簡報，在「32:9 超寬螢幕」、「9:16 直立看板」或「4×3 拼接電視牆」上實際長什麼樣子嗎？
-
-我們打造了【DisplayWall Sim 多尺寸螢幕與電視牆模擬器】！
-✨ 支援 3 大來源：貼上 HTML 原始碼、輸入網址 (URL)、或上傳 PDF / PPTX 簡報
-📐 真實解析度渲染：自由輸入長寬比與 4K 解析度，精準觸發 RWD 斷點
-🔲 電視牆拼縫模擬：可開啟 2×2、3×1 等拼接黑邊，檢查關鍵標題是否被切到
-🎬 提案展示神器：內建無游標光學截圖 & 含網頁音效/麥克風混音錄影，一鍵下載！
-
-立即線上體驗測試 👇</textarea>
-                    </div>
-
-                    <!-- 文案 2：策展與簡報提案版 -->
-                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-white">📊 展場活動 / 簡報提案版（適合給客戶與企劃）</span>
-                            <button onclick="copyShareText('shareText2')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
-                                <i class="fa-regular fa-copy"></i> 複製文字
-                            </button>
-                        </div>
-                        <textarea id="shareText2" readonly class="w-full h-24 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">去活動現場彩排前，還在擔心簡報或視覺畫面在特殊比例的 LED 電視牆上變形、留黑邊，或是重要大字剛好卡在螢幕接縫上嗎？
-
-直接把你的 PDF、PPTX 或網頁丟進【DisplayWall Sim 電視牆模擬器】！一秒切換「完整留黑邊 / 強制拉伸滿版 / 裁切填滿」，還能直接截圖或錄成展示影片給客戶確認！</textarea>
-                    </div>
-
-                    <!-- 文案 3：LINE / Threads 短版 -->
-                    <div class="bg-slate-950 p-3.5 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-white">⚡ 極簡短版（適合 LINE 群組 / Threads / IG）</span>
-                            <button onclick="copyShareText('shareText3')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition flex items-center gap-1">
-                                <i class="fa-regular fa-copy"></i> 複製文字
-                            </button>
-                        </div>
-                        <textarea id="shareText3" readonly class="w-full h-20 bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300 leading-relaxed focus:outline-none resize-none">超實用的【多尺寸螢幕與電視牆模擬器】⚡
-不管你是寫 HTML 網頁、測線上網址，還是放活動 PPT / PDF 簡報，輸入任何螢幕比例（16:9 / 32:9 / 9:16 / 拼接電視牆）就能立即預覽真實效果，還支援快捷鍵一鍵無痕截圖與錄影！</textarea>
-                    </div>
-                </div>
-
-            </div>
+            <div id="captureToastTitle" class="font-bold text-white"></div>
+            <div id="captureToastDesc" class="text-xs text-slate-400 mt-0.5"></div>
         </div>
     </div>
 
@@ -1105,7 +1002,7 @@
                 if (!el) return;
                 el.style.width = '100%';
                 el.style.height = '100%';
-                el.style.objectFit = mode; // 'contain' | 'fill' | 'cover'
+                el.style.objectFit = mode;
             });
         }
 
@@ -1157,7 +1054,6 @@
             const canvas = document.getElementById('pdfRenderCanvas');
             const ctx = canvas.getContext('2d');
 
-            // 以高解析度 (基礎 2x ~ 3x) 渲染 PDF 頁面，確保在 4K 電視牆上依然銳利清晰
             const baseViewport = page.getViewport({ scale: 1 });
             const targetScale = Math.max(2, Math.min(4, Math.max(state.resW / baseViewport.width, state.resH / baseViewport.height)));
             const viewport = page.getViewport({ scale: targetScale });
@@ -1173,14 +1069,13 @@
             applySlideFitStyling();
         }
 
-        // 2. 載入並解析 PPTX 檔案 (使用 JSZip 解析投影片文字、圖片與尺寸)
+        // 2. 載入並解析 PPTX 檔案
         async function loadPptxFile(file) {
             try {
                 showToast('正在解析 PPTX 投影片...', `解壓縮並提取 ${file.name} 內容中`, 'fa-solid fa-spinner fa-spin text-amber-400', 0);
                 const arrayBuffer = await file.arrayBuffer();
                 const zip = await JSZip.loadAsync(arrayBuffer);
 
-                // 讀取 presentation.xml 取得原始投影片長寬比例
                 let slideRatioW = 16, slideRatioH = 9;
                 const presXmlFile = zip.file('ppt/presentation.xml');
                 if (presXmlFile) {
@@ -1198,7 +1093,6 @@
                     }
                 }
 
-                // 找出所有 ppt/slides/slideX.xml 並依頁碼排序
                 const slideFiles = [];
                 zip.folder('ppt/slides')?.forEach((relativePath, zipEntry) => {
                     const match = relativePath.match(/^slide(\d+)\.xml$/);
@@ -1212,7 +1106,6 @@
                     throw new Error('找不到有效的 PPTX 投影片結構');
                 }
 
-                // 預先載入 ppt/media/ 下的所有圖片轉為 Blob URL
                 const mediaMap = {};
                 const mediaFolder = zip.folder('ppt/media');
                 if (mediaFolder) {
@@ -1234,7 +1127,6 @@
                     const xmlText = await s.entry.async('text');
                     const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
 
-                    // 提取該頁所有文字段落
                     const paragraphs = [];
                     const pNodes = xmlDoc.getElementsByTagName('a:p');
                     for (let i = 0; i < pNodes.length; i++) {
@@ -1248,7 +1140,6 @@
                         }
                     }
 
-                    // 讀取對應的 _rels/slideX.xml.rels 找出該頁引用的圖片
                     const slideImages = [];
                     const relFile = zip.file(`ppt/slides/_rels/slide${s.num}.xml.rels`);
                     if (relFile) {
@@ -1300,17 +1191,14 @@
             }
         }
 
-        // 渲染單頁 PPTX 內容並套用使用者選擇的縮放比例模式
         function renderCurrentPptxSlide() {
             const container = document.getElementById('pptxRenderContainer');
             const slide = state.pptxSlides[state.currentSlide - 1];
             if (!slide) return;
 
-            // 計算原始簡報比例盒子 (預設 1920x1080 或 4:3 的 1440x1080)
             const baseW = 1920;
             const baseH = Math.round(baseW * (slide.ratioH / slide.ratioW));
 
-            // 計算如何將 baseW x baseH 放進 state.resW x state.resH
             let scaleX = state.resW / baseW;
             let scaleY = state.resH / baseH;
             if (state.slideFitMode === 'contain') {
@@ -1322,7 +1210,6 @@
                 scaleX = s;
                 scaleY = s;
             }
-            // 若為 'fill' 則保留獨立的 scaleX 與 scaleY 強制拉伸滿版
 
             const title = slide.paragraphs[0] || `Slide #${slide.pageNum}`;
             const bodyLines = slide.paragraphs.slice(1);
@@ -1330,7 +1217,6 @@
 
             let bgLayerHtml = '';
             if (slide.images.length === 1 && bodyLines.length === 0) {
-                // 若整頁只有一張滿版圖 (常見於圖片型簡報)
                 bgLayerHtml = `<img src="${slide.images[0]}" class="w-full h-full object-cover absolute inset-0" />`;
             }
 
@@ -1404,7 +1290,6 @@
                 badge.className = 'text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
             }
 
-            // 清除先前的 src 網址設定，改由 srcdoc 渲染
             previewIframe.removeAttribute('src');
 
             if (!code) {
@@ -1426,7 +1311,6 @@
             let url = urlInput.value.trim();
             if (!url) return;
 
-            // 若未包含 http:// 或 https://，自動補上 https:// (若為 localhost 則補 http://)
             if (!/^https?:\/\//i.test(url)) {
                 if (url.startsWith('localhost') || url.startsWith('127.0.0.1')) {
                     url = 'http://' + url;
@@ -1436,7 +1320,6 @@
                 urlInput.value = url;
             }
 
-            // 移除 srcdoc 屬性，讓 iframe 優先讀取 src 外部網址
             previewIframe.removeAttribute('srcdoc');
             previewIframe.src = url;
 
@@ -1447,13 +1330,11 @@
             }
         }
 
-        // 快速填入並載入測試網址
         function quickLoadUrl(url) {
             document.getElementById('urlInput').value = url;
             renderURLToIframe();
         }
 
-        // 清空程式碼
         function clearCode() {
             htmlCodeInput.value = '';
             renderHTMLToIframe();
@@ -1477,7 +1358,6 @@
                 topText.textContent = '收合左側面板';
             }
 
-            // 等待收合動畫進行與完成時，重新計算右側模擬器自適應縮放尺寸
             setTimeout(() => {
                 if (state.fitMode) updateSimulatorLayout();
             }, 150);
@@ -1503,7 +1383,6 @@
             }
         }
 
-        // 觸發檔案自動下載
         function triggerDownload(url, filename) {
             const a = document.createElement('a');
             a.href = url;
@@ -1513,7 +1392,6 @@
             document.body.removeChild(a);
         }
 
-        // 產生帶比例與解析度的檔名
         function getFormattedFilename(prefix, ext) {
             const now = new Date();
             const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
@@ -1521,19 +1399,17 @@
         }
 
         // =========================================================================
-        // 核心擷取引擎：使用瀏覽器原生光學畫面 + CropTarget 精準鎖定模擬框 (100% 所見即所得)
+        // 核心擷取引擎：使用瀏覽器原生光學畫面 + CropTarget 精準鎖定模擬框
         // =========================================================================
         let sharedCaptureStream = null;
         let sharedCaptureVideo = null;
         let isStreamCroppedByBrowser = false;
         let recordMicEnabled = false;
 
-        // 動態控制模擬器外框與內部 Iframe 的滑鼠游標顯示/隱藏
         function setSimulatorCursorHidden(hide) {
             const shouldHide = hide && (document.getElementById('hideCursorOnCaptureToggle')?.checked ?? true);
             tvOuterWrapper.classList.toggle('hide-simulator-cursor', shouldHide);
 
-            // 若內部為同源 HTML (srcdoc)，同步注入或移除 iframe 內部的 cursor: none 樣式
             try {
                 const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow?.document;
                 if (iframeDoc && iframeDoc.head) {
@@ -1549,12 +1425,9 @@
                         styleEl.remove();
                     }
                 }
-            } catch (e) {
-                // 外部跨網域 URL 受同源政策保護時，由外層容器與系統參數負責隱藏
-            }
+            } catch (e) {}
         }
 
-        // 切換是否同步錄製麥克風聲音
         function toggleMicOption() {
             recordMicEnabled = !recordMicEnabled;
             const btn = document.getElementById('micToggleBtn');
@@ -1574,7 +1447,6 @@
             }
         }
 
-        // 取得或重用目前的畫面擷取串流（授權一次即可重複瞬間截圖與錄影）
         async function getOrInitCaptureStream(requireAudio = false) {
             const wantSysAudio = document.getElementById('recordSystemAudioToggle')?.checked ?? true;
             const hideCursor = document.getElementById('hideCursorOnCaptureToggle')?.checked ?? true;
@@ -1583,22 +1455,17 @@
                 const videoTrack = sharedCaptureStream.getVideoTracks()[0];
                 const hasAudioTrack = sharedCaptureStream.getAudioTracks().length > 0;
 
-                // 若之前只點了截圖(未開音訊)，而現在要錄影且需要系統音訊，則不重用舊串流並重新請求帶音訊授權
                 if (videoTrack && videoTrack.readyState === 'live' && (!requireAudio || !wantSysAudio || hasAudioTrack)) {
-                    // 嘗試動態套用游標隱藏約束
                     try {
                         await videoTrack.applyConstraints({ cursor: hideCursor ? 'never' : 'always' });
                     } catch (e) {}
 
-                    // 確保每次截圖前重新對準模擬框元素
                     if (window.CropTarget && typeof videoTrack.cropTo === 'function') {
                         try {
                             const target = await CropTarget.fromElement(iframeScaleBox);
                             await videoTrack.cropTo(target);
                             isStreamCroppedByBrowser = true;
-                        } catch (e) {
-                            console.warn('CropTarget 更新略過:', e);
-                        }
+                        } catch (e) {}
                     }
                     return { stream: sharedCaptureStream, video: sharedCaptureVideo };
                 }
@@ -1630,7 +1497,6 @@
             const videoTrack = stream.getVideoTracks()[0];
             isStreamCroppedByBrowser = false;
 
-            // 關鍵技術：使用瀏覽器原生 Region Capture (CropTarget)，直接由底層鎖定模擬框，完全不受外層視窗或分割畫面影響
             if (window.CropTarget && typeof videoTrack.cropTo === 'function') {
                 try {
                     const cropTarget = await CropTarget.fromElement(iframeScaleBox);
@@ -1647,7 +1513,6 @@
             video.playsInline = true;
             await video.play();
 
-            // 等待視訊串流穩定輸出第一幀
             await new Promise(r => setTimeout(r, 250));
 
             videoTrack.addEventListener('ended', () => {
@@ -1662,17 +1527,14 @@
             return { stream, video };
         }
 
-        // 將目前模擬框畫面繪製到指定 Canvas 上
         function drawSimulatorFrameToCanvas(video, targetCanvas) {
             const ctx = targetCanvas.getContext('2d');
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
             if (isStreamCroppedByBrowser) {
-                // 瀏覽器已經透過 CropTarget 精準裁切出模擬框，直接 1:1 滿版繪製！
                 ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, targetCanvas.width, targetCanvas.height);
             } else {
-                // 若為舊版不支援 CropTarget 的瀏覽器，計算精準視窗比例裁切
                 const rect = tvOuterWrapper.getBoundingClientRect();
                 const scaleX = video.videoWidth / document.documentElement.clientWidth;
                 const scaleY = video.videoHeight / document.documentElement.clientHeight;
@@ -1690,20 +1552,15 @@
             }
         }
 
-        // ==========================================
-        // 功能 1：一鍵精準截取模擬區域畫面 (Screenshot)
-        // ==========================================
         async function captureScreenWall() {
             const hud = document.getElementById('floatingSlideHud');
             try {
                 setSimulatorCursorHidden(true);
                 if (hud) hud.style.visibility = 'hidden';
                 const { video } = await getOrInitCaptureStream(false);
-                // 等待一幀確保游標與懸浮翻頁列已完全隱藏
                 await new Promise(r => requestAnimationFrame(r));
 
                 const outCanvas = document.createElement('canvas');
-                // 限制單邊最高 3840px (4K)，確保高畫質與流暢記憶體使用
                 const maxDim = 3840;
                 let outW = state.resW;
                 let outH = state.resH;
@@ -1741,9 +1598,6 @@
             }
         }
 
-        // ==========================================
-        // 功能 2：精準錄製模擬區域畫面與聲音 (Video + Audio Recording)
-        // ==========================================
         let isRecording = false;
         let mediaRecorder = null;
         let recordedChunks = [];
@@ -1770,7 +1624,6 @@
                 const { stream: displayStream, video: sourceVideo } = await getOrInitCaptureStream(true);
                 setSimulatorCursorHidden(true);
 
-                // 建立只屬於模擬區域比例的離屏 Canvas
                 const recCanvas = document.createElement('canvas');
                 const maxRecDim = 3840;
                 let recW = state.resW;
@@ -1787,7 +1640,6 @@
                 recordedChunks = [];
                 recordingSeconds = 0;
 
-                // 即時將已精準鎖定的模擬器畫面繪製至錄影 Canvas
                 function drawFrame() {
                     if (!isRecording) return;
                     drawSimulatorFrameToCanvas(sourceVideo, recCanvas);
@@ -1795,13 +1647,9 @@
                 }
                 drawFrame();
 
-                // 從 Canvas 擷取 30FPS 視訊串流
                 const canvasStream = recCanvas.captureStream(30);
                 const finalTracks = [...canvasStream.getVideoTracks()];
 
-                // ==========================================
-                // Web Audio API 多軌混音器 (系統分頁音訊 + 麥克風旁白)
-                // ==========================================
                 const sysAudioTracks = displayStream.getAudioTracks();
                 let hasAnyAudio = false;
 
@@ -1809,14 +1657,12 @@
                     activeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     const destination = activeAudioCtx.createMediaStreamDestination();
 
-                    // 1. 混入網頁分頁內部音訊
                     if (sysAudioTracks.length > 0) {
                         const sysSource = activeAudioCtx.createMediaStreamSource(new MediaStream([sysAudioTracks[0]]));
                         sysSource.connect(destination);
                         hasAnyAudio = true;
                     }
 
-                    // 2. 若使用者有開啟麥克風，混入麥克風音訊
                     if (recordMicEnabled) {
                         try {
                             activeMicStream = await navigator.mediaDevices.getUserMedia({
@@ -1839,7 +1685,6 @@
 
                 const combinedStream = new MediaStream(finalTracks);
 
-                // 選擇最佳影片與音訊編碼格式 (優先支援 MP4，其次 WebM)
                 const mimeTypes = [
                     'video/mp4;codecs=avc1,mp4a.40.2',
                     'video/mp4',
@@ -1851,8 +1696,8 @@
 
                 mediaRecorder = new MediaRecorder(combinedStream, {
                     mimeType: selectedMime,
-                    videoBitsPerSecond: 8000000, // 8 Mbps 高畫質
-                    audioBitsPerSecond: 192000   // 192 kbps 高音質
+                    videoBitsPerSecond: 8000000,
+                    audioBitsPerSecond: 192000
                 });
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -1862,7 +1707,6 @@
                 };
 
                 mediaRecorder.onstop = () => {
-                    // 清理麥克風與混音器資源
                     if (activeMicStream) {
                         activeMicStream.getTracks().forEach(t => t.stop());
                         activeMicStream = null;
@@ -1884,7 +1728,6 @@
 
                 mediaRecorder.start(200);
 
-                // 更新按鈕外觀為「錄影中」
                 recordBtn.className = "px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition animate-pulse";
                 recordBtnIcon.className = "fa-solid fa-stop";
                 recordBtnText.textContent = "停止錄影 (00:00)";
@@ -1937,211 +1780,13 @@
         }
 
         // ==========================================
-        // 社群分享縮圖 (1200x630 OG Image) 自動繪製與文案複製
-        // ==========================================
-        function openSocialKitModal() {
-            document.getElementById('socialKitModal').classList.remove('hidden');
-            drawOgThumbnailCanvas();
-        }
-
-        function closeSocialKitModal() {
-            document.getElementById('socialKitModal').classList.add('hidden');
-        }
-
-        function drawOgThumbnailCanvas() {
-            const canvas = document.getElementById('ogThumbCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const W = 1200, H = 630;
-
-            // 1. 深色科技感漸層背景
-            const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-            bgGrad.addColorStop(0, '#070b14');
-            bgGrad.addColorStop(0.5, '#0f172a');
-            bgGrad.addColorStop(1, '#091024');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, W, H);
-
-            // 2. 繪製背景科技網格線
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
-            ctx.lineWidth = 1;
-            for (let x = 0; x < W; x += 40) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-            }
-            for (let y = 0; y < H; y += 40) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-            }
-
-            // 3. 頂部與底部裝飾光條
-            const barGrad = ctx.createLinearGradient(0, 0, W, 0);
-            barGrad.addColorStop(0, '#3b82f6');
-            barGrad.addColorStop(0.5, '#06b6d4');
-            barGrad.addColorStop(1, '#6366f1');
-            ctx.fillStyle = barGrad;
-            ctx.fillRect(0, 0, W, 8);
-            ctx.fillRect(0, H - 6, W, 6);
-
-            // 4. 左側主視覺文案區
-            // 品牌徽章
-            ctx.fillStyle = 'rgba(37, 99, 235, 0.2)';
-            ctx.fillRect(68, 72, 260, 38);
-            ctx.strokeStyle = '#3b82f6';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(68, 72, 260, 38);
-
-            ctx.fillStyle = '#60a5fa';
-            ctx.font = 'bold 18px "JetBrains Mono", monospace';
-            ctx.fillText('DISPLAYWALL SIMULATOR', 84, 97);
-
-            // 主標題
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '900 54px "Noto Sans TC", sans-serif';
-            ctx.fillText('多尺寸螢幕與電視牆', 68, 185);
-
-            ctx.fillStyle = '#38bdf8';
-            ctx.font = '900 54px "Noto Sans TC", sans-serif';
-            ctx.fillText('網頁 / 簡報模擬器', 68, 255);
-
-            // 副標題說明
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '500 22px "Noto Sans TC", sans-serif';
-            ctx.fillText('貼上 HTML、網址或匯入 PDF / PPTX 簡報', 68, 315);
-            ctx.fillText('1:1 真實解析度模擬各比例螢幕與拼接電視牆', 68, 350);
-
-            // 特色標籤矩陣
-            const tags = [
-                { text: '16:9 / 32:9 / 9:16 自由比例', color: '#3b82f6' },
-                { text: '電視牆拼縫黑邊檢查', color: '#6366f1' },
-                { text: 'PDF & PPTX 縮放模擬', color: '#f59e0b' },
-                { text: '無痕截圖 & 音訊錄影', color: '#10b981' }
-            ];
-            tags.forEach((t, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-                const tx = 68 + col * 275;
-                const ty = 400 + row * 62;
-
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-                ctx.fillRect(tx, ty, 258, 46);
-                ctx.strokeStyle = t.color;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(tx, ty, 258, 46);
-
-                ctx.fillStyle = t.color;
-                ctx.fillRect(tx, ty, 6, 46);
-
-                ctx.fillStyle = '#f1f5f9';
-                ctx.font = 'bold 17px "Noto Sans TC", sans-serif';
-                ctx.fillText(t.text, tx + 18, ty + 29);
-            });
-
-            // 5. 右側：擬真多尺寸電視牆示意圖組 (32:9 超寬拼接牆 + 2x2 矩陣牆 + 9:16 直立看板)
-            // (A) 上方：32:9 雙聯屏超寬電視牆 (2x1)
-            const w1X = 640, w1Y = 85, w1W = 490, w1H = 145;
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(w1X, w1Y, w1W, w1H);
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(w1X, w1Y, w1W, w1H);
-
-            // 內部漸層與 2x1 拼縫線
-            const scrGrad1 = ctx.createLinearGradient(w1X, w1Y, w1X + w1W, w1Y + w1H);
-            scrGrad1.addColorStop(0, 'rgba(14, 165, 233, 0.25)');
-            scrGrad1.addColorStop(1, 'rgba(99, 102, 241, 0.25)');
-            ctx.fillStyle = scrGrad1;
-            ctx.fillRect(w1X + 4, w1Y + 4, w1W - 8, w1H - 8);
-
-            // 拼縫黑線
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(w1X + w1W / 2 - 2, w1Y, 4, w1H);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 22px "JetBrains Mono", monospace';
-            ctx.fillText('32 : 9 ULTRA-WIDE (3840×1080)', w1X + 65, w1Y + 75);
-            ctx.fillStyle = '#7dd3fc';
-            ctx.font = '15px "Noto Sans TC", sans-serif';
-            ctx.fillText('2×1 雙聯屏迎賓橫幅電視牆模式', w1X + 140, w1Y + 105);
-
-            // (B) 左下：2x2 矩陣拼接電視牆 (16:9)
-            const w2X = 640, w2Y = 265, w2W = 330, w2H = 260;
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(w2X, w2Y, w2W, w2H);
-            ctx.strokeStyle = '#818cf8';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(w2X, w2Y, w2W, w2H);
-
-            const scrGrad2 = ctx.createLinearGradient(w2X, w2Y, w2X + w2W, w2Y + w2H);
-            scrGrad2.addColorStop(0, 'rgba(79, 70, 229, 0.28)');
-            scrGrad2.addColorStop(1, 'rgba(16, 185, 129, 0.22)');
-            ctx.fillStyle = scrGrad2;
-            ctx.fillRect(w2X + 4, w2Y + 4, w2W - 8, w2H - 8);
-
-            // 2x2 十字拼縫黑線
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(w2X + w2W / 2 - 2, w2Y, 4, w2H);
-            ctx.fillRect(w2X, w2Y + w2H / 2 - 2, w2W, 4);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 22px "JetBrains Mono", monospace';
-            ctx.fillText('16 : 9 MATRIX (4K)', w2X + 55, w2Y + 120);
-            ctx.fillStyle = '#c7d2fe';
-            ctx.font = '15px "Noto Sans TC", sans-serif';
-            ctx.fillText('2×2 戰情室拼接電視牆', w2X + 88, w2Y + 155);
-
-            // (C) 右下：9:16 直立式數位看板 (Kiosk)
-            const w3X = 995, w3Y = 265, w3W = 135, w3H = 260;
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(w3X, w3Y, w3W, w3H);
-            ctx.strokeStyle = '#34d399';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(w3X, w3Y, w3W, w3H);
-
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
-            ctx.fillRect(w3X + 4, w3Y + 4, w3W - 8, w3H - 8);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 20px "JetBrains Mono", monospace';
-            ctx.fillText('9 : 16', w3X + 38, w3Y + 115);
-            ctx.fillStyle = '#6ee7b7';
-            ctx.font = '14px "Noto Sans TC", sans-serif';
-            ctx.fillText('直立電子看板', w3X + 25, w3Y + 145);
-            ctx.fillText('1080×1920', w3X + 28, w3Y + 170);
-
-            // 底部版權與網址標示
-            ctx.fillStyle = '#64748b';
-            ctx.font = '15px "JetBrains Mono", monospace';
-            ctx.fillText('HTML · URL · PDF · PPTX | Real-Time Viewport Scaling & Screen Wall Simulator', 68, 585);
-        }
-
-        function downloadOgThumbnail() {
-            drawOgThumbnailCanvas();
-            const canvas = document.getElementById('ogThumbCanvas');
-            canvas.toBlob((blob) => {
-                if (!blob) return;
-                const url = URL.createObjectURL(blob);
-                triggerDownload(url, 'og-cover-1200x630.png');
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast('社群縮圖已下載！', '尺寸為 1200×630 px，可直接用於貼文配圖或網站 OG 預覽圖', 'fa-solid fa-image text-emerald-400', 4000);
-            }, 'image/png');
-        }
-
-        function copyShareText(textareaId) {
-            const el = document.getElementById(textareaId);
-            if (!el) return;
-            navigator.clipboard.writeText(el.value).then(() => {
-                showToast('推廣文字已複製到剪貼簿！', '您現在可以直接貼上至 LINE、Facebook、Threads 或 LinkedIn', 'fa-solid fa-check text-emerald-400', 3000);
-            });
-        }
-
-        // ==========================================
-        // 多功能鍵盤快捷鍵處理 (支援主視窗與模擬器 Iframe 內部焦點)
+        // 多功能鍵盤快捷鍵處理
         // ==========================================
         function handleGlobalShortcuts(e) {
             const code = e.code;
             const activeTag = document.activeElement ? document.activeElement.tagName.toUpperCase() : '';
             const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA');
 
-            // 若目前正在預覽 PDF 或 PPTX 簡報，且焦點不在文字輸入框，支援左右方向鍵 (← / →) 快速翻頁
             if (!isTyping && (state.activeMediaType === 'pdf' || state.activeMediaType === 'pptx')) {
                 if (code === 'ArrowRight' || code === 'PageDown') {
                     e.preventDefault();
@@ -2155,7 +1800,6 @@
                 }
             }
 
-            // 單鍵快速觸發：F8 截圖、F9 開始/停止錄影 (方便單手操作畫面時一鍵盲按)
             if (code === 'F8') {
                 e.preventDefault();
                 captureScreenWall();
@@ -2167,30 +1811,29 @@
                 return;
             }
 
-            // 組合鍵：Alt + 字母 (macOS 為 Option + 字母)，使用 e.code 避免輸入法干擾
             if (e.altKey && !e.ctrlKey && !e.metaKey) {
                 switch (code) {
-                    case 'KeyS': // Alt + S：瞬間截圖
+                    case 'KeyS':
                         e.preventDefault();
                         captureScreenWall();
                         break;
-                    case 'KeyR': // Alt + R：開始 / 停止錄影
+                    case 'KeyR':
                         e.preventDefault();
                         toggleRecording();
                         break;
-                    case 'KeyM': // Alt + M：開關麥克風
+                    case 'KeyM':
                         e.preventDefault();
                         toggleMicOption();
                         break;
-                    case 'KeyB': // Alt + B：收合 / 展開左側面板
+                    case 'KeyB':
                         e.preventDefault();
                         toggleSidebar();
                         break;
-                    case 'KeyF': // Alt + F：自動適應視窗縮放
+                    case 'KeyF':
                         e.preventDefault();
                         setFitMode(true);
                         break;
-                    case 'KeyO': // Alt + O：直橫向比例翻轉
+                    case 'KeyO':
                         e.preventDefault();
                         swapOrientation();
                         break;
@@ -2198,7 +1841,6 @@
             }
         }
 
-        // 將快捷鍵監聽同步注入至同源 Iframe 內部，確保滑鼠正在操作模擬畫面內容時也能直接按快捷鍵
         function bindShortcutsToIframe() {
             try {
                 const iframeWin = previewIframe.contentWindow;
@@ -2206,17 +1848,12 @@
                     iframeWin.removeEventListener('keydown', handleGlobalShortcuts);
                     iframeWin.addEventListener('keydown', handleGlobalShortcuts);
                 }
-            } catch (e) {
-                // 若為跨網域外部 URL 則由主視窗負責監聽
-            }
+            } catch (e) {}
         }
 
-        // 事件監聽綁定
         function initEvents() {
-            // 綁定全局鍵盤快捷鍵
             window.addEventListener('keydown', handleGlobalShortcuts);
 
-            // 比例與解析度輸入變更
             ratioWInput.addEventListener('input', recalculateResolutionFromRatio);
             ratioHInput.addEventListener('input', recalculateResolutionFromRatio);
             resWInput.addEventListener('input', recalculateResolutionFromRatio);
@@ -2227,18 +1864,15 @@
                 if (state.lockRatio) recalculateResolutionFromRatio();
             });
 
-            // 電視牆拼接設定變更
             gridColsInput.addEventListener('input', renderBezelGrid);
             gridRowsInput.addEventListener('input', renderBezelGrid);
             bezelWidthInput.addEventListener('input', renderBezelGrid);
 
-            // 手動縮放拉桿
             manualScaleSlider.addEventListener('input', (e) => {
                 state.manualScale = parseInt(e.target.value) / 100;
                 setFitMode(false);
             });
 
-            // 電視外框與中心線開關
             document.getElementById('showFrameToggle').addEventListener('change', (e) => {
                 const show = e.target.checked;
                 const tvChin = document.getElementById('tvChin');
@@ -2263,7 +1897,7 @@
                     setSimulatorCursorHidden(true);
                 }
             });
-            // 當 Iframe 重新載入內容時，若正在錄影則自動套用隱藏游標，並重新綁定內部快捷鍵
+
             previewIframe.addEventListener('load', () => {
                 bindShortcutsToIframe();
                 if (isRecording) {
@@ -2271,7 +1905,6 @@
                 }
             });
 
-            // 程式碼編輯器即時更新 (加入 Debounce 避免頻繁重繪)
             let debounceTimer;
             htmlCodeInput.addEventListener('input', () => {
                 if (!document.getElementById('liveUpdateToggle').checked) return;
@@ -2281,7 +1914,6 @@
                 }, 350);
             });
 
-            // 網址輸入框支援按下 Enter 直接載入
             document.getElementById('urlInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -2289,13 +1921,11 @@
                 }
             });
 
-            // 載入範例按鈕
             document.getElementById('loadDemoBtn').addEventListener('click', () => {
                 htmlCodeInput.value = DEFAULT_DEMO_HTML;
                 renderHTMLToIframe();
             });
 
-            // 匯入本地檔案 (.html / .pdf / .pptx / 圖片 / 影片)
             document.getElementById('fileUpload').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -2314,7 +1944,6 @@
                     switchTab('code');
                     loadMediaImageOrVideo(file, true);
                 } else {
-                    // 預設當作 HTML 原始碼讀取
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         htmlCodeInput.value = event.target.result;
@@ -2323,10 +1952,9 @@
                     };
                     reader.readAsText(file);
                 }
-                e.target.value = ''; // 允許重複選取同檔案
+                e.target.value = '';
             });
 
-            // 視窗尺寸改變時自動重新計算縮放與側邊欄偏移
             window.addEventListener('resize', () => {
                 const sidebar = document.getElementById('sidebar');
                 if (state.sidebarCollapsed) {
@@ -2336,7 +1964,6 @@
             });
         }
 
-        // 初始化啟動
         window.onload = function () {
             initEvents();
             htmlCodeInput.value = DEFAULT_DEMO_HTML;
